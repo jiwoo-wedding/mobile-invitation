@@ -1,0 +1,7 @@
+node_modules
+dist
+.DS_Store
+
+# 환경변수는 절대 커밋하지 않는다 (Supabase 키 노출 방지)
+.env
+.env.local

@@ -1,0 +1,152 @@
+@import url('https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  색상 토큰의 실제 값은 src/config/themes.js 가 런타임에 주입한다.
+  아래 값은 테마 적용 전 첫 페인트에서 쓰이는 기본값(시그니처 올리브)이다.
+*/
+:root {
+  --c-page: #1a1c14;
+  --c-page-rgb: 26 28 20;
+  --c-bg: #474a37;
+  --c-bg-rgb: 71 74 55;
+  --c-surface: #2f3327;
+  --c-surface-rgb: 47 51 39;
+  --c-accent: #d8e592;
+  --c-accent-rgb: 216 229 146;
+  --c-accent-fg: #474a37;
+  --c-accent-fg-rgb: 71 74 55;
+  --c-text: #f1f3e8;
+  --c-text-rgb: 241 243 232;
+  --c-muted: #b9bfa4;
+  --c-muted-rgb: 185 191 164;
+  --c-border: #d8e592;
+  --c-border-rgb: 216 229 146;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--c-page);
+  font-family: 'Noto Sans KR', sans-serif;
+  color: var(--c-text);
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+  transition: background-color 0.4s ease;
+}
+
+/* 모바일 청첩장 본체: 최대 480px, 항상 중앙 정렬 */
+.mobile-container {
+  width: 100%;
+  max-width: 480px;
+  min-height: 100vh;
+  background-color: var(--c-bg);
+  box-shadow: 0 0 30px rgb(0 0 0 / 0.5);
+  position: relative;
+  overflow-x: hidden;
+  transition: background-color 0.4s ease;
+}
+
+.font-batang {
+  font-family: 'Gowun Batang', serif;
+}
+
+/* ── 테마별 배경 패턴 ─────────────────────────────── */
+[data-pattern='dots'] .mobile-container {
+  background-image: radial-gradient(
+    rgb(var(--c-accent-rgb) / 0.45) 0.75px,
+    transparent 0.75px
+  );
+  background-size: 16px 16px;
+}
+
+[data-pattern='stars'] .mobile-container {
+  background-image:
+    radial-gradient(rgb(var(--c-accent-rgb) / 0.7) 0.8px, transparent 0.8px),
+    radial-gradient(rgb(var(--c-text-rgb) / 0.25) 0.6px, transparent 0.6px);
+  background-size: 90px 90px, 40px 40px;
+  background-position: 0 0, 20px 30px;
+}
+
+[data-pattern='grain'] .mobile-container {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgb(var(--c-border-rgb) / 0.06) 0 2px,
+    transparent 2px 5px
+  );
+}
+
+[data-pattern='hanji'] .mobile-container {
+  background-image:
+    repeating-linear-gradient(0deg, rgb(var(--c-border-rgb) / 0.08) 0 1px, transparent 1px 7px),
+    repeating-linear-gradient(90deg, rgb(var(--c-border-rgb) / 0.06) 0 1px, transparent 1px 7px);
+}
+
+[data-pattern='none'] .mobile-container {
+  background-image: none;
+}
+
+/* ── 공통 유틸 ───────────────────────────────────── */
+.section-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 0;
+  color: var(--c-accent);
+  opacity: 0.8;
+  font-size: 12px;
+  letter-spacing: 6px;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@keyframes bounce-slow {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+.animate-bounce-slow {
+  animation: bounce-slow 2s infinite;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.animate-fade-up {
+  animation: fade-up 0.7s ease both;
+}
+
+/* 접근성: 모션 최소화 설정을 존중한다 */
+@media (prefers-reduced-motion: reduce) {
+  .animate-bounce-slow,
+  .animate-fade-up {
+    animation: none;
+  }
+}
+
+/* 키보드 포커스는 항상 보이게 */
+:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 2px;
+}
