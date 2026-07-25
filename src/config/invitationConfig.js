@@ -25,10 +25,10 @@ export const CONFIG = {
   couple: {
     groom: {
       name: '장성빈',
-      order: '장남', // 장남 / 차남 / 아들 ...
+      order: '장남', 
       father: '장재필',
       mother: '최미순',
-      fatherDeceased: false, // true 면 이름 앞에 故 가 붙습니다
+      fatherDeceased: false, 
       motherDeceased: false,
       tel: '010-0000-0000',
       fatherTel: '010-0000-0000',
@@ -36,7 +36,7 @@ export const CONFIG = {
     },
     bride: {
       name: '엄지우',
-      order: '장녀',
+      order: '차녀',
       father: '엄길용',
       mother: '조영순',
       fatherDeceased: false,
