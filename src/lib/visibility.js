@@ -18,8 +18,10 @@ export const showsVenue = (view) => view?.showVenue ?? view?.type !== 'announcem
 /**
  * D-DAY 를 시·분·초까지 보여줄지.
  *
- * 외부 알림용은 '며칠 남았다' 정도만 알리면 되고,
- * 초 단위 카운트다운은 오시라는 신호로 읽힐 수 있어 남은 날짜만 보여준다.
+ * 지금은 양쪽 모두 남은 날짜(DAYS)만 보여준다.
+ * 초 단위로 흘러가는 숫자는 시선을 끌지만 청첩장에서 꼭 필요한 정보는 아니다.
+ *
+ * 시·분·초를 다시 켜려면 invitationConfig.js 의 해당 종류에
+ * showCountdownDetail: true 를 적으면 된다.
  */
-export const showsCountdownDetail = (view) =>
-  view?.showCountdownDetail ?? view?.type !== 'announcement';
+export const showsCountdownDetail = (view) => view?.showCountdownDetail ?? false;

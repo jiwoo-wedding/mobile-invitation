@@ -1,31 +1,29 @@
 ﻿<#
-  외부 알림용 / 내빈용 노출 정보 정리   (최종본 — 앞의 visibility 스크립트들을 모두 대체)
+  구분선 중복 해결 + D-DAY 단순화 + 링크별 노출 정리   (최종본)
 
-  이 스크립트 하나로 아래 전부가 적용됩니다.
-  앞서 드린 apply-curtain-announcement.ps1 / apply-announcement-hide.ps1 /
-  apply-invite-visibility.ps1 을 실행했는지와 무관하게 이것만 실행하면 됩니다.
+  이 스크립트 하나로 전부 적용됩니다.
+  앞서 드린 apply-curtain-announcement / apply-announcement-hide /
+  apply-invite-visibility 를 모두 대체합니다.
 
-  첫 화면 (커튼)
-    외부용                       내빈용
-    ------------------------     ------------------------
-    WEDDING ANNOUNCEMENT         INVITATION
-    장성빈 / 그리고 / 엄지우       장성빈 / 그리고 / 엄지우
-    2026.12.19                   2026.12.19
-    (아래 줄 없음)                토요일 오후 1시
-                                 OO웨딩홀 3층 단독홀
-    [ 소식 보기 ]                 [ 초대장 열기 ]
+  1) ✦ ✦ ✦ 가 연속으로 나오는 문제
+     Supabase 미연결 상태에서 RSVP · 방명록 섹션이 비어 있는데
+     구분선만 남아 ACCOUNT 위 등에 두 줄이 겹쳐 보였습니다.
+     구분선을 손으로 붙이지 않고, 실제로 보이는 섹션 사이에만
+     자동으로 끼우는 구조(SectionStack)로 바꿨습니다.
 
-  히어로 사진 위 / D-DAY 부제
-    외부용 : 2026년 12월 19일 토요일             (시간 없음)
-    내빈용 : 2026년 12월 19일 토요일 오후 1시
+  2) D-DAY
+     내빈용 · 외부용 모두 DAYS 한 칸만 표시합니다.
+     (시·분·초를 다시 켜려면 visibility.js 주석 참고)
 
-  D-DAY 카운트다운
-    외부용 : DAYS 한 칸만
-    내빈용 : DAYS / HOUR / MIN / SEC 네 칸
+  3) 링크별 노출
+     커튼    외부용 2026.12.19 만 / 내빈용 날짜+요일 시간+예식장
+     히어로  외부용 시간 없음
+     D-DAY   부제 외부용 시간 없음
 
-  바뀌는 파일 8개:
-    src\lib\visibility.js                      (새 파일) 노출 규칙 한곳 관리
-    src\lib\format.js                          요일만 뽑는 함수 추가
+  바뀌는 파일 9개:
+    src\lib\visibility.js                        (새 파일)
+    src\lib\format.js
+    src\components\common\SectionStack.jsx        (새 파일)
     src\components\common\CurtainCover.jsx
     src\components\common\IntroSection.jsx
     src\components\common\DdaySection.jsx
@@ -34,16 +32,15 @@
     src\App.jsx
 
   ⚠️ invitationConfig.js 는 건드리지 않습니다.
-     (차녀 · mainPhoto · 캡션 · 계좌 수정이 그대로 유지됩니다)
 
-  두는 곳: C:\Users\sb622\OneDrive\문서\GitHub\mobile-invitation\apply-invite-visibility.ps1
+  두는 곳: C:\Users\sb622\OneDrive\문서\GitHub\mobile-invitation\apply-sections.ps1
   실행:
       cd "C:\Users\sb622\OneDrive\문서\GitHub\mobile-invitation"
-      powershell -ExecutionPolicy Bypass -File .\apply-invite-visibility.ps1
+      powershell -ExecutionPolicy Bypass -File .\apply-sections.ps1
 
   되돌리려면:
       git checkout -- src/components src/pages src/lib src/App.jsx
-      Remove-Item src\lib\visibility.js
+      Remove-Item src\lib\visibility.js, src\components\common\SectionStack.jsx
 #>
 
 $ErrorActionPreference = 'Stop'
@@ -78,10 +75,11 @@ Write-ProjectFile -Path 'src\lib\visibility.js' -Base64 (
   '7J2EIOuztOyXrOykhOyngCAqLwpleHBvcnQgY29uc3Qgc2hvd3NUaW1lID0gKHZpZXcpID0+IHZpZXc/LnNob3dUaW1lID8/IHZpZXc/LnR5cGUgIT09ICdh' +
   'bm5vdW5jZW1lbnQnOwoKLyoqIOyYiOyLneyepSDsnbTrpoTsnYQg67O07Jes7KSE7KeAICovCmV4cG9ydCBjb25zdCBzaG93c1ZlbnVlID0gKHZpZXcpID0+' +
   'IHZpZXc/LnNob3dWZW51ZSA/PyB2aWV3Py50eXBlICE9PSAnYW5ub3VuY2VtZW50JzsKCi8qKgogKiBELURBWSDrpbwg7IucwrfrtoTCt+y0iOq5jOyngCDr' +
-  's7Tsl6zspITsp4AuCiAqCiAqIOyZuOu2gCDslYzrprzsmqnsnYAgJ+upsOy5oCDrgqjslZjri6QnIOygleuPhOunjCDslYzrpqzrqbQg65CY6rOgLAogKiDs' +
-  'tIgg64uo7JyEIOy5tOyatO2KuOuLpOyatOydgCDsmKTsi5zrnbzripQg7Iug7Zi466GcIOydve2ekCDsiJgg7J6I7Ja0IOuCqOydgCDrgqDsp5zrp4wg67O0' +
-  '7Jes7KSA64ukLgogKi8KZXhwb3J0IGNvbnN0IHNob3dzQ291bnRkb3duRGV0YWlsID0gKHZpZXcpID0+CiAgdmlldz8uc2hvd0NvdW50ZG93bkRldGFpbCA/' +
-  'PyB2aWV3Py50eXBlICE9PSAnYW5ub3VuY2VtZW50JzsK'
+  's7Tsl6zspITsp4AuCiAqCiAqIOyngOq4iOydgCDslpHsqr0g66qo65GQIOuCqOydgCDrgqDsp5woREFZUynrp4wg67O07Jes7KSA64ukLgogKiDstIgg64uo' +
+  '7JyE66GcIO2dmOufrOqwgOuKlCDsiKvsnpDripQg7Iuc7ISg7J2EIOuBjOyngOunjCDssq3ssqnsnqXsl5DshJwg6rytIO2VhOyalO2VnCDsoJXrs7TripQg' +
+  '7JWE64uI64ukLgogKgogKiDsi5zCt+u2hMK37LSI66W8IOuLpOyLnCDsvJzroKTrqbQgaW52aXRhdGlvbkNvbmZpZy5qcyDsnZgg7ZW064u5IOyiheulmOyX' +
+  'kAogKiBzaG93Q291bnRkb3duRGV0YWlsOiB0cnVlIOulvCDsoIHsnLzrqbQg65Cc64ukLgogKi8KZXhwb3J0IGNvbnN0IHNob3dzQ291bnRkb3duRGV0YWls' +
+  'ID0gKHZpZXcpID0+IHZpZXc/LnNob3dDb3VudGRvd25EZXRhaWwgPz8gZmFsc2U7Cg=='
 )
 
 Write-ProjectFile -Path 'src\lib\format.js' -Base64 (
@@ -100,6 +98,24 @@ Write-ProjectFile -Path 'src\lib\format.js' -Base64 (
   'Zm9ybWF0U2hvcnREYXRlKCkgewogIHJldHVybiBDT05GSUcud2VkZGluZy5kYXRlLnJlcGxhY2VBbGwoJy0nLCAnLicpOwp9CgovKiog6rOg7J247J2066m0' +
   'IOydtOumhCDslZ7sl5Ag5pWFIOulvCDrtpnsnbjri6QgKi8KZXhwb3J0IGZ1bmN0aW9uIHdpdGhEZWNlYXNlZChuYW1lLCBkZWNlYXNlZCkgewogIHJldHVy' +
   'biBkZWNlYXNlZCA/IGDmlYUgJHtuYW1lfWAgOiBuYW1lOwp9Cg=='
+)
+
+Write-ProjectFile -Path 'src\components\common\SectionStack.jsx' -Base64 (
+  'aW1wb3J0IFJlYWN0IGZyb20gJ3JlYWN0JzsKaW1wb3J0IFNlY3Rpb25EaXZpZGVyIGZyb20gJy4vU2VjdGlvbkRpdmlkZXInOwppbXBvcnQgUmV2ZWFsIGZy' +
+  'b20gJy4vUmV2ZWFsJzsKCi8qKgogKiDshLnshZjrk6TsnYQg67Cb7JWEIOyCrOydtOyCrOydtOyXkCDqtazrtoTshKAo4pymIOKcpiDinKYp7J2EIOyekOuP' +
+  'meycvOuhnCDrgbzsmrTri6QuCiAqCiAqIOq1rOu2hOyEoOydhCDshLnshZjrp4jri6Qg7IaQ7Jy866GcIOu2meydtOuptCwg7KGw6rG07JeQIOqxuOugpCDs' +
+  'gqzrnbzsp4Qg7IS57IWY7J2YIOq1rOu2hOyEoOunjCDrgqjslYQKICog4pymIOKcpiDinKYg6rCAIOyXsOyGjeycvOuhnCDrs7TsnbTripQg66y47KCc6rCA' +
+  'IOyDneq4tOuLpC4KICogKOyYiDogU3VwYWJhc2Ug66+47Jew6rKwIOyLnCBSU1ZQIOyEueyFmOydtCDruYTslrQgQUNDT1VOVCDsnITsl5Ag65GQIOykhOyd' +
+  'tCDqsrnsuagpCiAqCiAqIOyCrOyaqeuylSDigJQgZmFsc2Ug64KYIG51bGwg7J2EIOq3uOuDpSDshJ7slrQg64Sj7Jy866m0IOyVjOyVhOyEnCDqsbjrn6zs' +
+  'p4Tri6QuCiAqICAgPFNlY3Rpb25TdGFjawogKiAgICAgc2VjdGlvbnM9e1sKICogICAgICAgPEdyZWV0aW5nU2VjdGlvbiB2aWV3PXt2aWV3fSAvPiwKICog' +
+  'ICAgICAgdmlldy5zaG93QWNjb3VudCAmJiA8QWNjb3VudFNlY3Rpb24gLz4sCiAqICAgICBdfQogKiAgIC8+CiAqCiAqIOyjvOydmDog7ZmU66m07JeQIOyV' +
+  'hOustOqyg+uPhCDqt7jrpqzsp4Ag7JWK64qUIOy7tO2PrOuEjO2KuCjrgrTrtoDsl5DshJwgbnVsbCDsnYQg67CY7ZmY7ZWY64qUIOqyveyasCnripQKICog' +
+  'ICAgICAg7Jes6riw7IScIOqxuOufrOuCvCDsiJgg7JeG64ukLiDqt7jrn7Ag7IS57IWY7J2AIOyhsOqxtOydhCDrsJTquaXsnLzroZwg6rq864K07IScIOuE' +
+  'mOqyqOyVvCDtlZzri6QuCiAqLwpleHBvcnQgZGVmYXVsdCBmdW5jdGlvbiBTZWN0aW9uU3RhY2soeyBzZWN0aW9ucywgbGVhZGluZyA9IHRydWUgfSkgewog' +
+  'IGNvbnN0IHZpc2libGUgPSBzZWN0aW9ucy5maWx0ZXIoQm9vbGVhbik7CgogIHJldHVybiAoCiAgICA8PgogICAgICB7dmlzaWJsZS5tYXAoKHNlY3Rpb24s' +
+  'IGluZGV4KSA9PiAoCiAgICAgICAgPFJlYWN0LkZyYWdtZW50IGtleT17aW5kZXh9PgogICAgICAgICAgeyhsZWFkaW5nIHx8IGluZGV4ID4gMCkgJiYgPFNl' +
+  'Y3Rpb25EaXZpZGVyIC8+fQogICAgICAgICAgPFJldmVhbD57c2VjdGlvbn08L1JldmVhbD4KICAgICAgICA8L1JlYWN0LkZyYWdtZW50PgogICAgICApKX0K' +
+  'ICAgIDwvPgogICk7Cn0K'
 )
 
 Write-ProjectFile -Path 'src\components\common\CurtainCover.jsx' -Base64 (
@@ -221,50 +237,41 @@ Write-ProjectFile -Path 'src\pages\GuestPage.jsx' -Base64 (
   'ZGF5U2VjdGlvbiBmcm9tICcuLi9jb21wb25lbnRzL2NvbW1vbi9EZGF5U2VjdGlvbic7CmltcG9ydCBTdG9yeVNlY3Rpb24gZnJvbSAnLi4vY29tcG9uZW50' +
   'cy9jb21tb24vU3RvcnlTZWN0aW9uJzsKaW1wb3J0IEdhbGxlcnlTZWN0aW9uIGZyb20gJy4uL2NvbXBvbmVudHMvY29tbW9uL0dhbGxlcnlTZWN0aW9uJzsK' +
   'aW1wb3J0IENvbnRhY3RTZWN0aW9uIGZyb20gJy4uL2NvbXBvbmVudHMvY29tbW9uL0NvbnRhY3RTZWN0aW9uJzsKaW1wb3J0IEd1ZXN0Ym9va1NlY3Rpb24g' +
-  'ZnJvbSAnLi4vY29tcG9uZW50cy9jb21tb24vR3Vlc3Rib29rU2VjdGlvbic7CmltcG9ydCBTZWN0aW9uRGl2aWRlciBmcm9tICcuLi9jb21wb25lbnRzL2Nv' +
-  'bW1vbi9TZWN0aW9uRGl2aWRlcic7CmltcG9ydCBSZXZlYWwgZnJvbSAnLi4vY29tcG9uZW50cy9jb21tb24vUmV2ZWFsJzsKaW1wb3J0IEZvb3RlciBmcm9t' +
-  'ICcuLi9jb21wb25lbnRzL2NvbW1vbi9Gb290ZXInOwppbXBvcnQgTG9jYXRpb25TZWN0aW9uIGZyb20gJy4uL2NvbXBvbmVudHMvcHJpdmF0ZS9Mb2NhdGlv' +
-  'blNlY3Rpb24nOwppbXBvcnQgSW5mb1NlY3Rpb24gZnJvbSAnLi4vY29tcG9uZW50cy9wcml2YXRlL0luZm9TZWN0aW9uJzsKaW1wb3J0IEFjY291bnRTZWN0' +
-  'aW9uIGZyb20gJy4uL2NvbXBvbmVudHMvcHJpdmF0ZS9BY2NvdW50U2VjdGlvbic7CmltcG9ydCBSc3ZwU2VjdGlvbiBmcm9tICcuLi9jb21wb25lbnRzL3By' +
-  'aXZhdGUvUnN2cFNlY3Rpb24nOwoKZXhwb3J0IGRlZmF1bHQgZnVuY3Rpb24gR3Vlc3RQYWdlKHsgdmlldyB9KSB7CiAgcmV0dXJuICgKICAgIDw+CiAgICAg' +
-  'IDxJbnRyb1NlY3Rpb24gdmlldz17dmlld30gLz4KCiAgICAgIDxTZWN0aW9uRGl2aWRlciAvPgogICAgICA8UmV2ZWFsPgogICAgICAgIDxHcmVldGluZ1Nl' +
-  'Y3Rpb24gdmlldz17dmlld30gLz4KICAgICAgPC9SZXZlYWw+CgogICAgICA8U2VjdGlvbkRpdmlkZXIgLz4KICAgICAgPFJldmVhbD4KICAgICAgICA8RGRh' +
-  'eVNlY3Rpb24gdmlldz17dmlld30gLz4KICAgICAgPC9SZXZlYWw+CgogICAgICA8U2VjdGlvbkRpdmlkZXIgLz4KICAgICAgPFJldmVhbD4KICAgICAgICA8' +
-  'U3RvcnlTZWN0aW9uIC8+CiAgICAgIDwvUmV2ZWFsPgoKICAgICAgPFNlY3Rpb25EaXZpZGVyIC8+CiAgICAgIDxSZXZlYWw+CiAgICAgICAgPEdhbGxlcnlT' +
-  'ZWN0aW9uIC8+CiAgICAgIDwvUmV2ZWFsPgoKICAgICAge3ZpZXcuc2hvd0xvY2F0aW9uICYmICgKICAgICAgICA8PgogICAgICAgICAgPFNlY3Rpb25EaXZp' +
-  'ZGVyIC8+CiAgICAgICAgICA8UmV2ZWFsPgogICAgICAgICAgICA8TG9jYXRpb25TZWN0aW9uIC8+CiAgICAgICAgICA8L1JldmVhbD4KICAgICAgICA8Lz4K' +
-  'ICAgICAgKX0KCiAgICAgIHt2aWV3LnNob3dJbmZvICYmICgKICAgICAgICA8PgogICAgICAgICAgPFNlY3Rpb25EaXZpZGVyIC8+CiAgICAgICAgICA8UmV2' +
-  'ZWFsPgogICAgICAgICAgICA8SW5mb1NlY3Rpb24gLz4KICAgICAgICAgIDwvUmV2ZWFsPgogICAgICAgIDwvPgogICAgICApfQoKICAgICAge3ZpZXcuc2hv' +
-  'd1JzdnAgJiYgKAogICAgICAgIDw+CiAgICAgICAgICA8U2VjdGlvbkRpdmlkZXIgLz4KICAgICAgICAgIDxSZXZlYWw+CiAgICAgICAgICAgIDxSc3ZwU2Vj' +
-  'dGlvbiAvPgogICAgICAgICAgPC9SZXZlYWw+CiAgICAgICAgPC8+CiAgICAgICl9CgogICAgICB7dmlldy5zaG93QWNjb3VudCAmJiAoCiAgICAgICAgPD4K' +
-  'ICAgICAgICAgIDxTZWN0aW9uRGl2aWRlciAvPgogICAgICAgICAgPFJldmVhbD4KICAgICAgICAgICAgPEFjY291bnRTZWN0aW9uIC8+CiAgICAgICAgICA8' +
-  'L1JldmVhbD4KICAgICAgICA8Lz4KICAgICAgKX0KCiAgICAgIDxTZWN0aW9uRGl2aWRlciAvPgogICAgICA8UmV2ZWFsPgogICAgICAgIDxDb250YWN0U2Vj' +
-  'dGlvbiAvPgogICAgICA8L1JldmVhbD4KCiAgICAgIDxTZWN0aW9uRGl2aWRlciAvPgogICAgICA8UmV2ZWFsPgogICAgICAgIDxHdWVzdGJvb2tTZWN0aW9u' +
-  'IC8+CiAgICAgIDwvUmV2ZWFsPgoKICAgICAgPFJldmVhbD4KICAgICAgICA8Rm9vdGVyIHR5cGU9e3ZpZXcudHlwZX0gLz4KICAgICAgPC9SZXZlYWw+CiAg' +
-  'ICA8Lz4KICApOwp9Cg=='
+  'ZnJvbSAnLi4vY29tcG9uZW50cy9jb21tb24vR3Vlc3Rib29rU2VjdGlvbic7CmltcG9ydCBTZWN0aW9uU3RhY2sgZnJvbSAnLi4vY29tcG9uZW50cy9jb21t' +
+  'b24vU2VjdGlvblN0YWNrJzsKaW1wb3J0IFJldmVhbCBmcm9tICcuLi9jb21wb25lbnRzL2NvbW1vbi9SZXZlYWwnOwppbXBvcnQgRm9vdGVyIGZyb20gJy4u' +
+  'L2NvbXBvbmVudHMvY29tbW9uL0Zvb3Rlcic7CmltcG9ydCBMb2NhdGlvblNlY3Rpb24gZnJvbSAnLi4vY29tcG9uZW50cy9wcml2YXRlL0xvY2F0aW9uU2Vj' +
+  'dGlvbic7CmltcG9ydCBJbmZvU2VjdGlvbiBmcm9tICcuLi9jb21wb25lbnRzL3ByaXZhdGUvSW5mb1NlY3Rpb24nOwppbXBvcnQgQWNjb3VudFNlY3Rpb24g' +
+  'ZnJvbSAnLi4vY29tcG9uZW50cy9wcml2YXRlL0FjY291bnRTZWN0aW9uJzsKaW1wb3J0IFJzdnBTZWN0aW9uIGZyb20gJy4uL2NvbXBvbmVudHMvcHJpdmF0' +
+  'ZS9Sc3ZwU2VjdGlvbic7CmltcG9ydCB7IGlzU3VwYWJhc2VSZWFkeSB9IGZyb20gJy4uL2xpYi9zdXBhYmFzZSc7CgpleHBvcnQgZGVmYXVsdCBmdW5jdGlv' +
+  'biBHdWVzdFBhZ2UoeyB2aWV3IH0pIHsKICAvLyDsobDqsbTsl5Ag6rG466CkIOu5oOynhCDshLnshZjsnZgg6rWs67aE7ISg7J20IOuCqOyngCDslYrrj4Tr' +
+  'oZ0g66qp66Gd7Jy866GcIOuEmOq4tOuLpC4KICAvLyBSU1ZQIMK3IOuwqeuqheuhneydgCBTdXBhYmFzZSDrpbwg7Jew6rKw7ZW07JW8IO2ZlOuptOyXkCDr' +
+  'gpjsmKTrr4DroZwg7Jes6riw7IScIO2VqOq7mCDtjJDri6jtlZzri6QuCiAgY29uc3Qgc2VjdGlvbnMgPSBbCiAgICA8R3JlZXRpbmdTZWN0aW9uIHZpZXc9' +
+  'e3ZpZXd9IC8+LAogICAgPERkYXlTZWN0aW9uIHZpZXc9e3ZpZXd9IC8+LAogICAgPFN0b3J5U2VjdGlvbiAvPiwKICAgIDxHYWxsZXJ5U2VjdGlvbiAvPiwK' +
+  'ICAgIHZpZXcuc2hvd0xvY2F0aW9uICYmIDxMb2NhdGlvblNlY3Rpb24gLz4sCiAgICB2aWV3LnNob3dJbmZvICYmIDxJbmZvU2VjdGlvbiAvPiwKICAgIHZp' +
+  'ZXcuc2hvd1JzdnAgJiYgaXNTdXBhYmFzZVJlYWR5ICYmIDxSc3ZwU2VjdGlvbiAvPiwKICAgIHZpZXcuc2hvd0FjY291bnQgJiYgPEFjY291bnRTZWN0aW9u' +
+  'IC8+LAogICAgPENvbnRhY3RTZWN0aW9uIC8+LAogICAgaXNTdXBhYmFzZVJlYWR5ICYmIDxHdWVzdGJvb2tTZWN0aW9uIC8+LAogIF07CgogIHJldHVybiAo' +
+  'CiAgICA8PgogICAgICA8SW50cm9TZWN0aW9uIHZpZXc9e3ZpZXd9IC8+CiAgICAgIDxTZWN0aW9uU3RhY2sgc2VjdGlvbnM9e3NlY3Rpb25zfSAvPgogICAg' +
+  'ICA8UmV2ZWFsPgogICAgICAgIDxGb290ZXIgdHlwZT17dmlldy50eXBlfSAvPgogICAgICA8L1JldmVhbD4KICAgIDwvPgogICk7Cn0K'
 )
 
 Write-ProjectFile -Path 'src\pages\AnnouncementPage.jsx' -Base64 (
   'aW1wb3J0IFJlYWN0IGZyb20gJ3JlYWN0JzsKLy8g7Jm467aAIOyVjOumvOyaqSDtjpjsnbTsp4Ag4oCUIOyepeyGjCDCtyDsmIjsi53snqUg7JWI64K0IMK3' +
   'IOqzhOyijCDCtyBSU1ZQIOulvCDroIzrjZTrp4HtlZjsp4Ag7JWK64qU64ukLgovLyAo7KGw6rG067aAIOyIqOq5gOydtCDslYTri4jrnbwg7JWE7JiIIGlt' +
-  'cG9ydCDtlZjsp4Ag7JWK7JWELCDrsojrk6Tsl5DshJwg6rOE7KKM67KI7Zi46rCAIOuFuOy2nOuQoCDsl6zsp4Drpbwg7KSE7J2464ukLikKaW1wb3J0IElu' +
-  'dHJvU2VjdGlvbiBmcm9tICcuLi9jb21wb25lbnRzL2NvbW1vbi9JbnRyb1NlY3Rpb24nOwppbXBvcnQgR3JlZXRpbmdTZWN0aW9uIGZyb20gJy4uL2NvbXBv' +
-  'bmVudHMvY29tbW9uL0dyZWV0aW5nU2VjdGlvbic7CmltcG9ydCBEZGF5U2VjdGlvbiBmcm9tICcuLi9jb21wb25lbnRzL2NvbW1vbi9EZGF5U2VjdGlvbic7' +
-  'CmltcG9ydCBTdG9yeVNlY3Rpb24gZnJvbSAnLi4vY29tcG9uZW50cy9jb21tb24vU3RvcnlTZWN0aW9uJzsKaW1wb3J0IEdhbGxlcnlTZWN0aW9uIGZyb20g' +
-  'Jy4uL2NvbXBvbmVudHMvY29tbW9uL0dhbGxlcnlTZWN0aW9uJzsKaW1wb3J0IENvbnRhY3RTZWN0aW9uIGZyb20gJy4uL2NvbXBvbmVudHMvY29tbW9uL0Nv' +
-  'bnRhY3RTZWN0aW9uJzsKaW1wb3J0IEd1ZXN0Ym9va1NlY3Rpb24gZnJvbSAnLi4vY29tcG9uZW50cy9jb21tb24vR3Vlc3Rib29rU2VjdGlvbic7CmltcG9y' +
-  'dCBTZWN0aW9uRGl2aWRlciBmcm9tICcuLi9jb21wb25lbnRzL2NvbW1vbi9TZWN0aW9uRGl2aWRlcic7CmltcG9ydCBSZXZlYWwgZnJvbSAnLi4vY29tcG9u' +
-  'ZW50cy9jb21tb24vUmV2ZWFsJzsKaW1wb3J0IEZvb3RlciBmcm9tICcuLi9jb21wb25lbnRzL2NvbW1vbi9Gb290ZXInOwppbXBvcnQgTm90aWNlU2VjdGlv' +
-  'biBmcm9tICcuLi9jb21wb25lbnRzL3B1YmxpYy9Ob3RpY2VTZWN0aW9uJzsKCmV4cG9ydCBkZWZhdWx0IGZ1bmN0aW9uIEFubm91bmNlbWVudFBhZ2UoeyB2' +
-  'aWV3IH0pIHsKICByZXR1cm4gKAogICAgPD4KICAgICAgPEludHJvU2VjdGlvbiB2aWV3PXt2aWV3fSAvPgoKICAgICAgPFNlY3Rpb25EaXZpZGVyIC8+CiAg' +
-  'ICAgIDxSZXZlYWw+CiAgICAgICAgPEdyZWV0aW5nU2VjdGlvbiB2aWV3PXt2aWV3fSAvPgogICAgICA8L1JldmVhbD4KCiAgICAgIDxTZWN0aW9uRGl2aWRl' +
-  'ciAvPgogICAgICA8UmV2ZWFsPgogICAgICAgIDxEZGF5U2VjdGlvbiB2aWV3PXt2aWV3fSAvPgogICAgICA8L1JldmVhbD4KCiAgICAgIDxTZWN0aW9uRGl2' +
-  'aWRlciAvPgogICAgICA8UmV2ZWFsPgogICAgICAgIDxTdG9yeVNlY3Rpb24gLz4KICAgICAgPC9SZXZlYWw+CgogICAgICA8U2VjdGlvbkRpdmlkZXIgLz4K' +
-  'ICAgICAgPFJldmVhbD4KICAgICAgICA8R2FsbGVyeVNlY3Rpb24gLz4KICAgICAgPC9SZXZlYWw+CgogICAgICA8U2VjdGlvbkRpdmlkZXIgLz4KICAgICAg' +
-  'PFJldmVhbD4KICAgICAgICA8Tm90aWNlU2VjdGlvbiAvPgogICAgICA8L1JldmVhbD4KCiAgICAgIDxTZWN0aW9uRGl2aWRlciAvPgogICAgICA8UmV2ZWFs' +
-  'PgogICAgICAgIDxDb250YWN0U2VjdGlvbiAvPgogICAgICA8L1JldmVhbD4KCiAgICAgIDxTZWN0aW9uRGl2aWRlciAvPgogICAgICA8UmV2ZWFsPgogICAg' +
-  'ICAgIDxHdWVzdGJvb2tTZWN0aW9uIC8+CiAgICAgIDwvUmV2ZWFsPgoKICAgICAgPFJldmVhbD4KICAgICAgICA8Rm9vdGVyIHR5cGU9e3ZpZXcudHlwZX0g' +
-  'Lz4KICAgICAgPC9SZXZlYWw+CiAgICA8Lz4KICApOwp9Cg=='
+  'cG9ydCDtlZjsp4Ag7JWK7JWELCDrsojrk6Tsl5Ag7ZW064u5IOy9lOuTnOqwgCDshJ7snbTsp4Ag7JWK64qU64ukKQppbXBvcnQgSW50cm9TZWN0aW9uIGZy' +
+  'b20gJy4uL2NvbXBvbmVudHMvY29tbW9uL0ludHJvU2VjdGlvbic7CmltcG9ydCBHcmVldGluZ1NlY3Rpb24gZnJvbSAnLi4vY29tcG9uZW50cy9jb21tb24v' +
+  'R3JlZXRpbmdTZWN0aW9uJzsKaW1wb3J0IERkYXlTZWN0aW9uIGZyb20gJy4uL2NvbXBvbmVudHMvY29tbW9uL0RkYXlTZWN0aW9uJzsKaW1wb3J0IFN0b3J5' +
+  'U2VjdGlvbiBmcm9tICcuLi9jb21wb25lbnRzL2NvbW1vbi9TdG9yeVNlY3Rpb24nOwppbXBvcnQgR2FsbGVyeVNlY3Rpb24gZnJvbSAnLi4vY29tcG9uZW50' +
+  'cy9jb21tb24vR2FsbGVyeVNlY3Rpb24nOwppbXBvcnQgQ29udGFjdFNlY3Rpb24gZnJvbSAnLi4vY29tcG9uZW50cy9jb21tb24vQ29udGFjdFNlY3Rpb24n' +
+  'OwppbXBvcnQgR3Vlc3Rib29rU2VjdGlvbiBmcm9tICcuLi9jb21wb25lbnRzL2NvbW1vbi9HdWVzdGJvb2tTZWN0aW9uJzsKaW1wb3J0IFNlY3Rpb25TdGFj' +
+  'ayBmcm9tICcuLi9jb21wb25lbnRzL2NvbW1vbi9TZWN0aW9uU3RhY2snOwppbXBvcnQgUmV2ZWFsIGZyb20gJy4uL2NvbXBvbmVudHMvY29tbW9uL1JldmVh' +
+  'bCc7CmltcG9ydCBGb290ZXIgZnJvbSAnLi4vY29tcG9uZW50cy9jb21tb24vRm9vdGVyJzsKaW1wb3J0IE5vdGljZVNlY3Rpb24gZnJvbSAnLi4vY29tcG9u' +
+  'ZW50cy9wdWJsaWMvTm90aWNlU2VjdGlvbic7CmltcG9ydCB7IGlzU3VwYWJhc2VSZWFkeSB9IGZyb20gJy4uL2xpYi9zdXBhYmFzZSc7CgpleHBvcnQgZGVm' +
+  'YXVsdCBmdW5jdGlvbiBBbm5vdW5jZW1lbnRQYWdlKHsgdmlldyB9KSB7CiAgY29uc3Qgc2VjdGlvbnMgPSBbCiAgICA8R3JlZXRpbmdTZWN0aW9uIHZpZXc9' +
+  'e3ZpZXd9IC8+LAogICAgPERkYXlTZWN0aW9uIHZpZXc9e3ZpZXd9IC8+LAogICAgPFN0b3J5U2VjdGlvbiAvPiwKICAgIDxHYWxsZXJ5U2VjdGlvbiAvPiwK' +
+  'ICAgIHZpZXcuc2hvd05vdGljZSAmJiA8Tm90aWNlU2VjdGlvbiAvPiwKICAgIDxDb250YWN0U2VjdGlvbiAvPiwKICAgIGlzU3VwYWJhc2VSZWFkeSAmJiA8' +
+  'R3Vlc3Rib29rU2VjdGlvbiAvPiwKICBdOwoKICByZXR1cm4gKAogICAgPD4KICAgICAgPEludHJvU2VjdGlvbiB2aWV3PXt2aWV3fSAvPgogICAgICA8U2Vj' +
+  'dGlvblN0YWNrIHNlY3Rpb25zPXtzZWN0aW9uc30gLz4KICAgICAgPFJldmVhbD4KICAgICAgICA8Rm9vdGVyIHR5cGU9e3ZpZXcudHlwZX0gLz4KICAgICAg' +
+  'PC9SZXZlYWw+CiAgICA8Lz4KICApOwp9Cg=='
 )
 
 Write-ProjectFile -Path 'src\App.jsx' -Base64 (
@@ -286,12 +293,12 @@ Write-ProjectFile -Path 'src\App.jsx' -Base64 (
 
 Write-Host ''
 $checks = @(
-  @{ Name = '노출 규칙 파일';        Path = 'src\lib\visibility.js';                  Pattern = 'showsCountdownDetail' },
-  @{ Name = '요일 함수';             Path = 'src\lib\format.js';                      Pattern = 'formatWeekday' },
-  @{ Name = '커튼 날짜 중복 제거';    Path = 'src\components\common\CurtainCover.jsx'; Pattern = 'formatWeekday' },
-  @{ Name = '히어로 시간 숨김';       Path = 'src\components\common\IntroSection.jsx'; Pattern = 'showsTime' },
-  @{ Name = 'D-DAY DAYS 만';         Path = 'src\components\common\DdaySection.jsx';  Pattern = 'showsCountdownDetail' },
-  @{ Name = '외부용 페이지 전달';     Path = 'src\pages\AnnouncementPage.jsx';          Pattern = 'view=\{view\}' }
+  @{ Name = '구분선 자동 처리';   Path = 'src\components\common\SectionStack.jsx'; Pattern = 'filter\(Boolean\)' },
+  @{ Name = '내빈용 페이지';      Path = 'src\pages\GuestPage.jsx';                Pattern = 'SectionStack' },
+  @{ Name = '외부용 페이지';      Path = 'src\pages\AnnouncementPage.jsx';          Pattern = 'SectionStack' },
+  @{ Name = 'D-DAY DAYS 만';     Path = 'src\lib\visibility.js';                   Pattern = 'showCountdownDetail \?\? false' },
+  @{ Name = '커튼 날짜 정리';     Path = 'src\components\common\CurtainCover.jsx';  Pattern = 'formatWeekday' },
+  @{ Name = '히어로 시간 숨김';   Path = 'src\components\common\IntroSection.jsx';  Pattern = 'showsTime' }
 )
 
 $fail = 0
@@ -309,8 +316,4 @@ if ($fail -eq 0) { Write-Host '모두 적용됐습니다.' -ForegroundColor Gree
 else             { Write-Host "$fail 건 실패. 위 목록을 알려주세요." -ForegroundColor Red }
 
 Write-Host ''
-Write-Host '개발 서버를 껐다가 다시 켜고 (Ctrl+C 후 npm run dev)' -ForegroundColor Cyan
-Write-Host '브라우저는 Ctrl+Shift+R 로 새로고침하세요.' -ForegroundColor Cyan
-Write-Host ''
-Write-Host '  http://localhost:5173/mobile-invitation/              외부용'
-Write-Host '  http://localhost:5173/mobile-invitation/?type=guest   내빈용'
+Write-Host '개발 서버를 껐다가 다시 켜세요 (Ctrl+C 후 npm run dev).' -ForegroundColor Cyan
