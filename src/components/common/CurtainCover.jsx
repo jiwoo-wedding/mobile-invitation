@@ -3,14 +3,31 @@ import { CONFIG } from '../../config/invitationConfig';
 import { formatFullDate, formatTime, formatShortDate } from '../../lib/format';
 
 /**
- * 초대장 열기 화면 (CONFIG.useCurtain 이 true 일 때만 표시)
+ * 첫 화면 (CONFIG.useCurtain 이 true 일 때만 표시)
  *
  * 480px 컨테이너에 갇히지 않고 화면 전체를 채운다.
  * 사진 없이, 청첩장 카드처럼 이중 테두리와 글자만으로 구성했다.
+ *
+ * 링크 종류에 따라 성격이 다르므로 문구와 노출 정보를 나눈다.
+ *   내빈용 : 초대하는 자리 → 'INVITATION' / '초대장 열기' / 날짜 + 예식장
+ *   외부용 : 알리는 소식   → 'WEDDING ANNOUNCEMENT' / '소식 보기' / 날짜만
+ *
+ * 외부 손님은 초대하지 않으므로, 외부용에서는 예식장을 아예 표시하지 않는다.
+ * (문구를 바꾸고 싶으면 invitationConfig.js 의 각 종류에
+ *  curtainLabel / curtainButton 을 추가하면 그 값이 우선한다)
  */
-export default function CurtainCover({ onOpen }) {
+const CURTAIN_TEXT = {
+  guest: { label: 'INVITATION', button: '초대장 열기', showVenue: true },
+  announcement: { label: 'WEDDING ANNOUNCEMENT', button: '소식 보기', showVenue: false },
+};
+
+export default function CurtainCover({ onOpen, view }) {
   const { groom, bride } = CONFIG.couple;
   const { venue, hall } = CONFIG.wedding;
+
+  const preset = CURTAIN_TEXT[view?.type] ?? CURTAIN_TEXT.announcement;
+  const label = view?.curtainLabel ?? preset.label;
+  const buttonText = view?.curtainButton ?? preset.button;
 
   return (
     <div className="cover-screen fixed inset-0 z-40 flex items-center justify-center overflow-hidden bg-bg px-6 text-ink">
@@ -23,7 +40,7 @@ export default function CurtainCover({ onOpen }) {
 
       <div className="relative flex w-full max-w-sm flex-col items-center gap-12 text-center">
         <p className="animate-enter font-batang text-[10px] tracking-[0.55em] text-accent">
-          INVITATION
+          {label}
         </p>
 
         <div className="animate-enter space-y-5" style={{ animationDelay: '250ms' }}>
@@ -44,8 +61,12 @@ export default function CurtainCover({ onOpen }) {
           </p>
           <p className="text-xs leading-6 text-muted">
             {formatFullDate()} {formatTime()}
-            <br />
-            {venue} {hall}
+            {preset.showVenue && (
+              <>
+                <br />
+                {venue} {hall}
+              </>
+            )}
           </p>
         </div>
 
@@ -54,7 +75,7 @@ export default function CurtainCover({ onOpen }) {
           className="animate-enter rounded-full border border-line bg-accent px-9 py-3.5 text-sm font-bold tracking-wide text-accent-fg shadow-lg transition-transform active:scale-95"
           style={{ animationDelay: '650ms' }}
         >
-          초대장 열기
+          {buttonText}
         </button>
       </div>
     </div>

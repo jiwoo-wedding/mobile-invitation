@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useInvitation } from './hooks/useInvitation';
 import { CONFIG } from './config/invitationConfig';
+import { useInvitation } from './hooks/useInvitation';
 import CurtainCover from './components/common/CurtainCover';
 import ThemeSwitcher from './components/common/ThemeSwitcher';
 import GuestPage from './pages/GuestPage';
@@ -10,26 +10,21 @@ export default function App() {
   const { type, view, themeId, setTheme } = useInvitation();
   const [opened, setOpened] = useState(!CONFIG.useCurtain);
 
-  // 테마를 고르는 동안에만 뜨는 도구. 정한 뒤에는 allowThemePreview 를 false 로.
-  const switcher = CONFIG.allowThemePreview ? (
-    <ThemeSwitcher current={themeId} onChange={setTheme} />
-  ) : null;
-
-  if (!opened) {
-    return (
-      <>
-        <CurtainCover onOpen={() => setOpened(true)} />
-        {switcher}
-      </>
-    );
-  }
+  // 종류에 따라 보여줄 페이지만 갈아끼운다. 테마와는 무관하게 동작한다.
+  const Page = type === 'guest' ? GuestPage : AnnouncementPage;
 
   return (
     <>
-      <div className="mobile-container text-ink">
-        {type === 'guest' ? <GuestPage view={view} /> : <AnnouncementPage view={view} />}
-      </div>
-      {switcher}
+      {opened ? (
+        <div className="mobile-container text-ink">
+          <Page view={view} />
+        </div>
+      ) : (
+        <CurtainCover onOpen={() => setOpened(true)} view={view} />
+      )}
+
+      {/* 테마 고르는 동안만 노출. 정한 뒤 allowThemePreview 를 false 로 바꾸면 사라진다 */}
+      {CONFIG.allowThemePreview && <ThemeSwitcher current={themeId} onChange={setTheme} />}
     </>
   );
 }
