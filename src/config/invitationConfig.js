@@ -36,7 +36,7 @@ export const CONFIG = {
     },
     bride: {
       name: '엄지우',
-      order: '차녀',
+      order: '장녀',
       father: '엄길용',
       mother: '조영순',
       fatherDeceased: false,
@@ -70,16 +70,45 @@ export const CONFIG = {
 
   // ── 5. 사진 ─────────────────────────────────────
   // 파일은 src/assets/ 아래 폴더에 넣기만 하면 자동으로 인식됩니다.
-  //   src/assets/gallery/   갤러리 사진 (몇 장이든 자유, 파일명도 자유)
+  //   src/assets/gallery/<장소 폴더>/  갤러리 사진 (몇 장이든 자유, 파일명도 자유)
   //   src/assets/story/     우리 이야기 사진
   //   src/assets/location/  약도 1장
   // 카카오톡 썸네일만 예외로 public/og.jpg 에 둡니다.
   gallery: {
-    initialCount: 12, // 처음에 보여줄 장수. 나머지는 '더 보기'로 펼칩니다.
+    // 그룹마다 처음에 보여줄 장수. 나머지는 '더 보기'로 펼칩니다.
+    initialCount: 6,
+
+    // 갤러리를 장소별로 나눕니다.
+    //   folder : src/assets/gallery 아래 폴더 이름과 반드시 똑같이 적으세요 (대소문자·공백 포함)
+    //   title  : 화면에 보일 제목
+    //   caption: 제목 아래 한 줄 설명 (빈 문자열이면 안 나옵니다)
+    //   mapUrl : 구글 지도 공유 링크. 빈 문자열이면 지도 버튼이 안 나옵니다.
+    // 여기 적은 순서대로 화면에 나옵니다.
+    groups: [
+      {
+        folder: 'Akarenga Warehouse',
+        title: '가나모리 아카렌가 창고',
+        caption: '하코다테 베이의 붉은 벽돌 창고',
+        mapUrl: 'https://maps.app.goo.gl/1JMraHfQSkFvTios5',
+      },
+      {
+        folder: 'Hachiman Zaka',
+        title: '하치만자카',
+        caption: '바다로 내려가는 언덕길',
+        mapUrl: 'https://maps.app.goo.gl/dW6pjXTxTQg8Rdds8',
+      },
+      {
+        folder: 'Trappist Monastery',
+        title: '트라피스트 수도원',
+        caption: '삼나무 길 끝의 붉은 벽돌 수도원',
+        mapUrl: 'https://maps.app.goo.gl/CT7ri5XqGvvLu6tV9',
+      },
+    ],
   },
 
   // 첫 화면에 쓸 대표 사진.
-  // src/assets/gallery 안의 파일명을 그대로 적습니다. 세로 사진이 잘 어울립니다.
+  // src/assets/gallery 안의 파일명을 그대로 적습니다 (하위 폴더 안에 있어도 파일명만 적으면 됩니다).
+  // 세로 사진이 잘 어울립니다.
   // 이름이 안 맞으면 갤러리 첫 장이 대신 쓰이고, 개발 중에는 콘솔에 경고가 찍힙니다.
   mainPhoto: 'trapi12.jpg',
 

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react';
-import { galleryImages } from '../../lib/assets';
+import { X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, MapPin } from 'lucide-react';
+import { galleryGroups, galleryImages } from '../../lib/assets';
 import { CONFIG } from '../../config/invitationConfig';
 import SectionTitle from './SectionTitle';
 
@@ -9,10 +9,15 @@ const MAX_ZOOM = 4;
 const ZOOM_STEP = 0.5;
 
 export default function GallerySection() {
-  const images = galleryImages;
+  const groups = galleryGroups;
+  const images = galleryImages; // 그룹 순서대로 이어붙인 전체 목록
   const step = CONFIG.gallery.initialCount;
 
-  const [shown, setShown] = useState(step); // 격자에 보여줄 장수
+  // 그룹마다 몇 장까지 펼쳤는지 따로 기억한다. { 'Hachiman Zaka': 6, ... }
+  const [shown, setShown] = useState(() =>
+    Object.fromEntries(groups.map((g) => [g.folder, step]))
+  );
+
   const [index, setIndex] = useState(null); // null 이면 확대 보기 닫힘
   const [zoom, setZoom] = useState(1);
   const touchRef = useRef(null);
@@ -83,15 +88,24 @@ export default function GallerySection() {
     else zoomOut();
   };
 
-  const visible = images.slice(0, shown);
-  const remaining = images.length - shown;
-
   const iconButton =
     'grid size-11 place-items-center rounded-full bg-white/10 text-white ring-1 ring-white/25 backdrop-blur-sm transition hover:bg-white/20 active:scale-90 disabled:opacity-35 disabled:active:scale-100';
 
+  /** 확대 보기에서 현재 사진이 어느 장소인지 찾는다 */
+  const groupOfIndex = (i) => {
+    let start = 0;
+    for (const group of groups) {
+      if (i < start + group.images.length) return group;
+      start += group.images.length;
+    }
+    return null;
+  };
+
+  const currentGroup = index === null ? null : groupOfIndex(index);
+
   /**
    * 확대 보기를 document.body 로 빼낸다.
-   * Reveal 컴포넌트가 will-change/transform 을 쓰기 때문에, 그 안에서 position:fixed 를
+   * Reveal 컴포넌트가 transform 을 쓰기 때문에, 그 안에서 position:fixed 를
    * 쓰면 화면이 아니라 섹션 박스가 기준이 되어 사진이 480px 폭에 잘린다.
    */
   const lightbox =
@@ -139,6 +153,27 @@ export default function GallerySection() {
             style={zoom === 1 ? undefined : { width: `${zoom * 100}%` }}
           />
         </div>
+
+        {/* 지금 보고 있는 사진의 장소 이름 + 지도 링크 */}
+        {currentGroup && zoom === 1 && (
+          <div className="fixed left-1/2 top-4 flex -translate-x-1/2 items-center gap-2">
+            <span className="rounded-full bg-black/55 px-3.5 py-2 text-xs text-white/85 ring-1 ring-white/15">
+              {currentGroup.title}
+            </span>
+            {currentGroup.mapUrl && (
+              <a
+                href={currentGroup.mapUrl}
+                target="_blank"
+                rel="noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                aria-label={`${currentGroup.title} 지도 열기`}
+                className={`${iconButton} size-9`}
+              >
+                <MapPin size={15} />
+              </a>
+            )}
+          </div>
+        )}
 
         {/* 조작 버튼 */}
         <button onClick={close} aria-label="닫기" className={`${iconButton} fixed right-4 top-4`}>
@@ -189,48 +224,97 @@ export default function GallerySection() {
       document.body
     );
 
+  // 그룹별로 전체 목록에서의 시작 위치를 미리 계산해 둔다 (확대 보기 인덱스용)
+  let offset = 0;
+  const blocks = groups.map((group) => {
+    const block = { ...group, offset };
+    offset += group.images.length;
+    return block;
+  });
+
   return (
     <section className="px-5 py-6">
       <SectionTitle label="GALLERY" sub="사진을 누르면 크게 보실 수 있습니다" />
 
-      {/* 가로 3열 격자 */}
-      <div className="grid grid-cols-3 gap-1.5">
-        {visible.map((src, i) => (
-          <button
-            key={src}
-            onClick={() => setIndex(i)}
-            aria-label={`${i + 1}번째 사진 크게 보기`}
-            className="gallery-cell group aspect-square overflow-hidden rounded-md border border-line/20"
-            style={{ animationDelay: `${(i % step) * 45}ms` }}
-          >
-            <img
-              src={src}
-              alt=""
-              loading="lazy"
-              decoding="async"
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110 group-active:scale-105"
-            />
-          </button>
-        ))}
+      <div className="space-y-8">
+        {blocks.map((group) => {
+          const limit = shown[group.folder] ?? step;
+          const visible = group.images.slice(0, limit);
+          const remaining = group.images.length - limit;
+
+          return (
+            <div key={group.folder}>
+              {/* 장소 제목 + 지도 링크 */}
+              <div className="mb-3 flex items-end justify-between gap-3">
+                <div>
+                  <h3 className="font-batang text-base font-bold text-accent">{group.title}</h3>
+                  {group.caption && (
+                    <p className="mt-0.5 text-[11px] text-muted">{group.caption}</p>
+                  )}
+                </div>
+
+                {group.mapUrl && (
+                  <a
+                    href={group.mapUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex shrink-0 items-center gap-1 rounded-full border border-line/40 px-3 py-1.5 text-[11px] font-bold text-accent transition-colors hover:bg-accent/10"
+                  >
+                    <MapPin size={12} />
+                    지도
+                  </a>
+                )}
+              </div>
+
+              {/* 가로 3열 격자 */}
+              <div className="grid grid-cols-3 gap-1.5">
+                {visible.map((src, i) => (
+                  <button
+                    key={src}
+                    onClick={() => setIndex(group.offset + i)}
+                    aria-label={`${group.title} ${i + 1}번째 사진 크게 보기`}
+                    className="gallery-cell group aspect-square overflow-hidden rounded-md border border-line/20"
+                    style={{ animationDelay: `${(i % step) * 45}ms` }}
+                  >
+                    <img
+                      src={src}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110 group-active:scale-105"
+                    />
+                  </button>
+                ))}
+              </div>
+
+              {remaining > 0 && (
+                <button
+                  onClick={() =>
+                    setShown((prevShown) => ({
+                      ...prevShown,
+                      [group.folder]: (prevShown[group.folder] ?? step) + step,
+                    }))
+                  }
+                  className="mt-3 w-full rounded-xl border border-line/40 py-2.5 text-xs font-bold text-accent transition-colors hover:bg-accent/10"
+                >
+                  {group.title} 사진 더 보기 ({remaining}장)
+                </button>
+              )}
+
+              {remaining <= 0 && group.images.length > step && (
+                <button
+                  onClick={() =>
+                    setShown((prevShown) => ({ ...prevShown, [group.folder]: step }))
+                  }
+                  className="mt-3 w-full rounded-xl border border-line/20 py-2.5 text-[11px] text-muted"
+                >
+                  접기
+                </button>
+              )}
+            </div>
+          );
+        })}
       </div>
-
-      {remaining > 0 && (
-        <button
-          onClick={() => setShown((n) => n + step)}
-          className="mt-4 w-full rounded-xl border border-line/40 py-3 text-sm font-bold text-accent transition-colors hover:bg-accent/10"
-        >
-          사진 더 보기 ({remaining}장)
-        </button>
-      )}
-
-      {shown >= images.length && images.length > step && (
-        <button
-          onClick={() => setShown(step)}
-          className="mt-4 w-full rounded-xl border border-line/20 py-3 text-xs text-muted"
-        >
-          접기
-        </button>
-      )}
 
       {lightbox}
     </section>
