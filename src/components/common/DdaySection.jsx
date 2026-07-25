@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { CONFIG } from '../../config/invitationConfig';
 import { weddingDate, formatFullDate, formatTime } from '../../lib/format';
 import SectionTitle from './SectionTitle';
+import { showsTime } from '../../lib/visibility';
 
 /** 남은 시간을 {일, 시, 분, 초, 지남} 으로 계산 */
 function getRemaining(target) {
@@ -19,7 +20,7 @@ function getRemaining(target) {
   };
 }
 
-export default function DdaySection() {
+export default function DdaySection({ view }) {
   const target = weddingDate();
   const [remaining, setRemaining] = useState(() => getRemaining(target));
 
@@ -44,7 +45,10 @@ export default function DdaySection() {
 
   return (
     <section className="px-5 py-6">
-      <SectionTitle label="D-DAY" sub={`${formatFullDate()} ${formatTime()}`} />
+      <SectionTitle
+        label="D-DAY"
+        sub={showsTime(view) ? `${formatFullDate()} ${formatTime()}` : formatFullDate()}
+      />
 
       <div className="grid grid-cols-4 gap-2">
         {units.map((unit) => (

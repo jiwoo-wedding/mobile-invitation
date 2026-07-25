@@ -2,9 +2,13 @@ import React from 'react';
 import { CONFIG } from '../../config/invitationConfig';
 import { mainImage } from '../../lib/assets';
 import { formatFullDate, formatTime } from '../../lib/format';
+import { showsTime } from '../../lib/visibility';
 
-/** 첫 화면 — 대표 사진 위에 이름과 날짜를 올린다 */
-export default function IntroSection() {
+/**
+ * 첫 화면 — 대표 사진 위에 이름과 날짜를 올린다.
+ * 외부 알림용에서는 예식 시간을 빼고 날짜만 보여준다.
+ */
+export default function IntroSection({ view }) {
   const { groom, bride } = CONFIG.couple;
 
   return (
@@ -31,7 +35,8 @@ export default function IntroSection() {
           {groom.name} <span className="text-accent">&amp;</span> {bride.name}
         </h1>
         <p className="animate-enter text-sm opacity-90" style={{ animationDelay: '700ms' }}>
-          {formatFullDate()} {formatTime()}
+          {formatFullDate()}
+          {showsTime(view) && ` ${formatTime()}`}
         </p>
       </div>
 

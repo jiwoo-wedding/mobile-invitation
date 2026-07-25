@@ -18,7 +18,7 @@ import RsvpSection from '../components/private/RsvpSection';
 export default function GuestPage({ view }) {
   return (
     <>
-      <IntroSection />
+      <IntroSection view={view} />
 
       <SectionDivider />
       <Reveal>
@@ -27,7 +27,7 @@ export default function GuestPage({ view }) {
 
       <SectionDivider />
       <Reveal>
-        <DdaySection />
+        <DdaySection view={view} />
       </Reveal>
 
       <SectionDivider />

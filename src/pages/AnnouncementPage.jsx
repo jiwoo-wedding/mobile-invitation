@@ -16,7 +16,7 @@ import NoticeSection from '../components/public/NoticeSection';
 export default function AnnouncementPage({ view }) {
   return (
     <>
-      <IntroSection />
+      <IntroSection view={view} />
 
       <SectionDivider />
       <Reveal>
@@ -25,7 +25,7 @@ export default function AnnouncementPage({ view }) {
 
       <SectionDivider />
       <Reveal>
-        <DdaySection />
+        <DdaySection view={view} />
       </Reveal>
 
       <SectionDivider />

@@ -1,6 +1,7 @@
 import React from 'react';
 import { CONFIG } from '../../config/invitationConfig';
 import { formatFullDate, formatTime, formatShortDate } from '../../lib/format';
+import { showsTime, showsVenue } from '../../lib/visibility';
 
 /**
  * 첫 화면 (CONFIG.useCurtain 이 true 일 때만 표시)
@@ -9,16 +10,17 @@ import { formatFullDate, formatTime, formatShortDate } from '../../lib/format';
  * 사진 없이, 청첩장 카드처럼 이중 테두리와 글자만으로 구성했다.
  *
  * 링크 종류에 따라 성격이 다르므로 문구와 노출 정보를 나눈다.
- *   내빈용 : 초대하는 자리 → 'INVITATION' / '초대장 열기' / 날짜 + 예식장
+ *   내빈용 : 초대하는 자리 → 'INVITATION' / '초대장 열기' / 날짜 + 시간 + 예식장
  *   외부용 : 알리는 소식   → 'WEDDING ANNOUNCEMENT' / '소식 보기' / 날짜만
  *
- * 외부 손님은 초대하지 않으므로, 외부용에서는 예식장을 아예 표시하지 않는다.
+ * 외부 손님은 초대하지 않으므로, 외부용에서는 시간과 예식장을 표시하지 않는다.
+ * (오시라는 뜻으로 읽힐 정보를 남기지 않는다)
  * (문구를 바꾸고 싶으면 invitationConfig.js 의 각 종류에
  *  curtainLabel / curtainButton 을 추가하면 그 값이 우선한다)
  */
 const CURTAIN_TEXT = {
-  guest: { label: 'INVITATION', button: '초대장 열기', showVenue: true },
-  announcement: { label: 'WEDDING ANNOUNCEMENT', button: '소식 보기', showVenue: false },
+  guest: { label: 'INVITATION', button: '초대장 열기' },
+  announcement: { label: 'WEDDING ANNOUNCEMENT', button: '소식 보기' },
 };
 
 export default function CurtainCover({ onOpen, view }) {
@@ -60,8 +62,9 @@ export default function CurtainCover({ onOpen, view }) {
             {formatShortDate()}
           </p>
           <p className="text-xs leading-6 text-muted">
-            {formatFullDate()} {formatTime()}
-            {preset.showVenue && (
+            {formatFullDate()}
+            {showsTime(view) && ` ${formatTime()}`}
+            {showsVenue(view) && (
               <>
                 <br />
                 {venue} {hall}
