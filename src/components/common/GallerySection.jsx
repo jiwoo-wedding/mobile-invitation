@@ -154,23 +154,25 @@ export default function GallerySection() {
           />
         </div>
 
-        {/* 지금 보고 있는 사진의 장소 이름 + 지도 링크 */}
+        {/* 지금 보고 있는 사진의 장소 이름 (지도 링크) */}
         {currentGroup && zoom === 1 && (
-          <div className="fixed left-1/2 top-4 flex -translate-x-1/2 items-center gap-2">
-            <span className="rounded-full bg-black/55 px-3.5 py-2 text-xs text-white/85 ring-1 ring-white/15">
-              {currentGroup.title}
-            </span>
-            {currentGroup.mapUrl && (
+          <div className="fixed left-1/2 top-4 -translate-x-1/2">
+            {currentGroup.mapUrl ? (
               <a
                 href={currentGroup.mapUrl}
                 target="_blank"
                 rel="noreferrer"
                 onClick={(e) => e.stopPropagation()}
-                aria-label={`${currentGroup.title} 지도 열기`}
-                className={`${iconButton} size-9`}
+                aria-label={`${currentGroup.title} 구글 지도에서 보기`}
+                className="flex items-center gap-1.5 rounded-full bg-black/55 px-3.5 py-2 text-xs text-white/90 ring-1 ring-white/15 transition hover:bg-black/70"
               >
-                <MapPin size={15} />
+                {currentGroup.title}
+                <MapPin size={13} className="opacity-75" aria-hidden="true" />
               </a>
+            ) : (
+              <span className="rounded-full bg-black/55 px-3.5 py-2 text-xs text-white/85 ring-1 ring-white/15">
+                {currentGroup.title}
+              </span>
             )}
           </div>
         )}
@@ -244,26 +246,26 @@ export default function GallerySection() {
 
           return (
             <div key={group.folder}>
-              {/* 장소 제목 + 지도 링크 */}
-              <div className="mb-3 flex items-end justify-between gap-3">
-                <div>
-                  <h3 className="font-batang text-base font-bold text-accent">{group.title}</h3>
-                  {group.caption && (
-                    <p className="mt-0.5 text-[11px] text-muted">{group.caption}</p>
+              {/* 장소 제목이 곧 구글 지도 링크 */}
+              <div className="mb-3">
+                <h3 className="font-batang text-base font-bold text-accent">
+                  {group.mapUrl ? (
+                    <a
+                      href={group.mapUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={`${group.title} 구글 지도에서 보기`}
+                      className="inline-flex items-baseline gap-1.5 underline decoration-accent/40 decoration-1 underline-offset-4 transition-colors hover:decoration-accent"
+                    >
+                      {group.title}
+                      <MapPin size={13} className="translate-y-px opacity-70" aria-hidden="true" />
+                    </a>
+                  ) : (
+                    group.title
                   )}
-                </div>
+                </h3>
 
-                {group.mapUrl && (
-                  <a
-                    href={group.mapUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex shrink-0 items-center gap-1 rounded-full border border-line/40 px-3 py-1.5 text-[11px] font-bold text-accent transition-colors hover:bg-accent/10"
-                  >
-                    <MapPin size={12} />
-                    지도
-                  </a>
-                )}
+                {group.caption && <p className="mt-1 text-[11px] text-muted">{group.caption}</p>}
               </div>
 
               {/* 가로 3열 격자 */}
