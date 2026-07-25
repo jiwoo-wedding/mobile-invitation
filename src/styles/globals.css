@@ -236,26 +236,48 @@ body {
   animation: lightbox-image-in 0.3s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
-/* 접근성: 모션 최소화 설정을 존중한다 */
+/*
+  모션 최소화 설정(iOS '동작 줄이기' · 저전력 모드, Android '애니메이션 제거')일 때.
+
+  예전에는 애니메이션을 전부 껐지만, 그러면 상당수 하객에게 효과가 아예 안 보였다.
+  (iOS 는 배터리가 낮아 저전력 모드가 켜지면 이 설정을 자동으로 활성화한다.)
+
+  그래서 지금은 끄지 않고 "부드럽게" 만든다.
+  - 페이드(투명도)는 그대로 둔다 — 어지럼증을 유발하지 않는다.
+  - 위아래로 밀려 올라오거나 확대되는 '움직임'만 없앤다.
+  - 계속 반복되는 애니메이션(스크롤 화살표, 켄번즈)만 정지시킨다.
+    반복 모션이 멀미를 유발하는 주범이라 이건 유지하는 게 맞다.
+*/
 @media (prefers-reduced-motion: reduce) {
+  /* 반복되는 움직임은 정지 */
   .animate-bounce-slow,
-  .cover-frame,
-  .animate-ken-burns,
-  .animate-enter,
-  .gallery-cell,
-  .lightbox,
-  .lightbox-image {
+  .animate-ken-burns {
     animation: none;
   }
-  .animate-enter,
-  .cover-frame,
-  .gallery-cell {
+
+  /* 한 번만 재생되는 등장 효과는 살리되, 이동 없이 페이드만 */
+  .reveal {
+    transform: none;
+    transition: opacity 0.8s ease;
+  }
+  .reveal.is-visible {
     opacity: 1;
   }
-  .reveal {
+
+  .gallery-cell {
+    animation: fade-only 0.5s ease-out forwards;
+  }
+  .lightbox-image {
+    animation: fade-only 0.3s ease-out;
+  }
+}
+
+@keyframes fade-only {
+  from {
+    opacity: 0;
+  }
+  to {
     opacity: 1;
-    transform: none;
-    transition: none;
   }
 }
 
