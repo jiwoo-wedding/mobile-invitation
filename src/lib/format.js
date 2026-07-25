@@ -25,6 +25,11 @@ export function formatTime() {
   return m === 0 ? `${meridiem} ${h12}시` : `${meridiem} ${h12}시 ${m}분`;
 }
 
+/** 토요일 */
+export function formatWeekday() {
+  return `${WEEKDAYS[weddingDate().getDay()]}요일`;
+}
+
 /** 2026.12.19 */
 export function formatShortDate() {
   return CONFIG.wedding.date.replaceAll('-', '.');

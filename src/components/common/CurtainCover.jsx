@@ -1,6 +1,6 @@
 import React from 'react';
 import { CONFIG } from '../../config/invitationConfig';
-import { formatFullDate, formatTime, formatShortDate } from '../../lib/format';
+import { formatWeekday, formatTime, formatShortDate } from '../../lib/format';
 import { showsTime, showsVenue } from '../../lib/visibility';
 
 /**
@@ -10,8 +10,17 @@ import { showsTime, showsVenue } from '../../lib/visibility';
  * 사진 없이, 청첩장 카드처럼 이중 테두리와 글자만으로 구성했다.
  *
  * 링크 종류에 따라 성격이 다르므로 문구와 노출 정보를 나눈다.
- *   내빈용 : 초대하는 자리 → 'INVITATION' / '초대장 열기' / 날짜 + 시간 + 예식장
- *   외부용 : 알리는 소식   → 'WEDDING ANNOUNCEMENT' / '소식 보기' / 날짜만
+ *   내빈용 : 'INVITATION' / '초대장 열기'
+ *              2026.12.19
+ *              토요일 오후 1시
+ *              OO웨딩홀 3층 단독홀
+ *
+ *   외부용 : 'WEDDING ANNOUNCEMENT' / '소식 보기'
+ *              2026.12.19
+ *              (아래 줄 없음)
+ *
+ * 큰 글씨에 이미 날짜가 있으므로 아래 줄에서는 날짜를 반복하지 않고
+ * 요일과 시간만 적는다.
  *
  * 외부 손님은 초대하지 않으므로, 외부용에서는 시간과 예식장을 표시하지 않는다.
  * (오시라는 뜻으로 읽힐 정보를 남기지 않는다)
@@ -61,16 +70,13 @@ export default function CurtainCover({ onOpen, view }) {
           <p className="font-batang text-base tracking-[0.2em] text-accent tabular-nums">
             {formatShortDate()}
           </p>
-          <p className="text-xs leading-6 text-muted">
-            {formatFullDate()}
-            {showsTime(view) && ` ${formatTime()}`}
-            {showsVenue(view) && (
-              <>
-                <br />
-                {venue} {hall}
-              </>
-            )}
-          </p>
+          {(showsTime(view) || showsVenue(view)) && (
+            <p className="text-xs leading-6 text-muted">
+              {showsTime(view) && `${formatWeekday()} ${formatTime()}`}
+              {showsTime(view) && showsVenue(view) && <br />}
+              {showsVenue(view) && `${venue} ${hall}`}
+            </p>
+          )}
         </div>
 
         <button

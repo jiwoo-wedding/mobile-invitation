@@ -1,33 +1,44 @@
 ﻿<#
-  외부 알림용에서 예식 시간 · 예식장 숨기기
+  외부 알림용 / 내빈용 노출 정보 정리  (하나로 합친 최종본)
 
-  외부 알림용 (파라미터 없는 주소)
-    첫 화면 상단   INVITATION  ->  WEDDING ANNOUNCEMENT
-    첫 화면 버튼   초대장 열기  ->  소식 보기
-    첫 화면 정보   2026년 12월 19일 토요일          (시간 · 예식장 없음)
-    히어로 사진    2026년 12월 19일 토요일          (시간 없음)
-    D-DAY 부제     2026년 12월 19일 토요일          (시간 없음)
+  앞서 드린 apply-curtain-announcement.ps1 과 apply-announcement-hide.ps1 을
+  이 스크립트가 모두 포함합니다. 그것들을 실행했는지와 무관하게 이것만 실행하면 됩니다.
 
-  내빈용 (?type=guest) 은 시간과 예식장이 그대로 나옵니다.
+  첫 화면 (커튼)
+    외부용            내빈용
+    ----------        ----------------------
+    WEDDING           INVITATION
+    ANNOUNCEMENT
+    2026.12.19        2026.12.19
+    (아래 줄 없음)     토요일 오후 1시
+                      OO웨딩홀 3층 단독홀
+    [소식 보기]        [초대장 열기]
 
-  바뀌는 파일 7개:
-    src\lib\visibility.js                        (새 파일) 노출 규칙 한곳 관리
+  히어로 사진 / D-DAY 부제
+    외부용 : 2026년 12월 19일 토요일          (시간 없음)
+    내빈용 : 2026년 12월 19일 토요일 오후 1시
+
+  큰 글씨에 이미 날짜가 있으므로 커튼 아래 줄에서는 날짜를 반복하지 않습니다.
+
+  바뀌는 파일 8개:
+    src\lib\visibility.js                      (새 파일) 노출 규칙 한곳 관리
+    src\lib\format.js                          요일만 뽑는 함수 추가
     src\components\common\CurtainCover.jsx
     src\components\common\IntroSection.jsx
     src\components\common\DdaySection.jsx
-    src\pages\GuestPage.jsx                      링크 종류 전달
-    src\pages\AnnouncementPage.jsx                링크 종류 전달
-    src\App.jsx                                   링크 종류 전달
+    src\pages\GuestPage.jsx
+    src\pages\AnnouncementPage.jsx
+    src\App.jsx
 
-  ⚠️ invitationConfig.js 는 건드리지 않습니다.
+  ⚠️ invitationConfig.js 는 건드리지 않습니다. (차녀 · mainPhoto · 캡션 유지)
 
-  두는 곳: C:\Users\sb622\OneDrive\문서\GitHub\mobile-invitation\apply-announcement-hide.ps1
+  두는 곳: C:\Users\sb622\OneDrive\문서\GitHub\mobile-invitation\apply-invite-visibility.ps1
   실행:
       cd "C:\Users\sb622\OneDrive\문서\GitHub\mobile-invitation"
-      powershell -ExecutionPolicy Bypass -File .\apply-announcement-hide.ps1
+      powershell -ExecutionPolicy Bypass -File .\apply-invite-visibility.ps1
 
   되돌리려면:
-      git checkout -- src/components src/pages src/App.jsx
+      git checkout -- src/components src/pages src/lib src/App.jsx
       Remove-Item src\lib\visibility.js
 #>
 
@@ -35,6 +46,7 @@ $ErrorActionPreference = 'Stop'
 
 if (-not (Test-Path .\package.json)) {
   Write-Host '프로젝트 폴더에서 실행하세요 (package.json 이 있는 곳).' -ForegroundColor Red
+  Write-Host ('현재 위치: ' + (Get-Location)) -ForegroundColor Yellow
   exit 1
 }
 
@@ -64,49 +76,70 @@ Write-ProjectFile -Path 'src\lib\visibility.js' -Base64 (
   'IHZpZXc/LnNob3dWZW51ZSA/PyB2aWV3Py50eXBlICE9PSAnYW5ub3VuY2VtZW50JzsK'
 )
 
+Write-ProjectFile -Path 'src\lib\format.js' -Base64 (
+  'aW1wb3J0IHsgQ09ORklHIH0gZnJvbSAnLi4vY29uZmlnL2ludml0YXRpb25Db25maWcnOwoKY29uc3QgV0VFS0RBWVMgPSBbJ+ydvCcsICfsm5QnLCAn7ZmU' +
+  'JywgJ+yImCcsICfrqqknLCAn6riIJywgJ+2GoCddOwoKLyoqICcyMDI2LTEyLTE5JyArICcxMzowMCcg4oaSIERhdGUg6rCd7LK0ICjroZzsu6wg7Iuc6rCE' +
+  'IOq4sOykgCkgKi8KZXhwb3J0IGZ1bmN0aW9uIHdlZGRpbmdEYXRlKCkgewogIGNvbnN0IFt5LCBtLCBkXSA9IENPTkZJRy53ZWRkaW5nLmRhdGUuc3BsaXQo' +
+  'Jy0nKS5tYXAoTnVtYmVyKTsKICBjb25zdCBbaGgsIG1tXSA9IENPTkZJRy53ZWRkaW5nLnRpbWUuc3BsaXQoJzonKS5tYXAoTnVtYmVyKTsKICByZXR1cm4g' +
+  'bmV3IERhdGUoeSwgbSAtIDEsIGQsIGhoLCBtbSwgMCwgMCk7Cn0KCi8qKiAyMDI264WEIDEy7JuUIDE57J28IO2GoOyalOydvCAqLwpleHBvcnQgZnVuY3Rp' +
+  'b24gZm9ybWF0RnVsbERhdGUoKSB7CiAgY29uc3QgZHQgPSB3ZWRkaW5nRGF0ZSgpOwogIHJldHVybiBgJHtkdC5nZXRGdWxsWWVhcigpfeuFhCAke2R0Lmdl' +
+  'dE1vbnRoKCkgKyAxfeyblCAke2R0LmdldERhdGUoKX3snbwgJHtXRUVLREFZU1tkdC5nZXREYXkoKV197JqU7J28YDsKfQoKLyoqIOyYpO2bhCAx7IucIC8g' +
+  '7Jik7ZuEIDHsi5wgMzDrtoQgKi8KZXhwb3J0IGZ1bmN0aW9uIGZvcm1hdFRpbWUoKSB7CiAgY29uc3QgZHQgPSB3ZWRkaW5nRGF0ZSgpOwogIGNvbnN0IGgg' +
+  'PSBkdC5nZXRIb3VycygpOwogIGNvbnN0IG0gPSBkdC5nZXRNaW51dGVzKCk7CiAgY29uc3QgbWVyaWRpZW0gPSBoIDwgMTIgPyAn7Jik7KCEJyA6ICfsmKTt' +
+  'm4QnOwogIGNvbnN0IGgxMiA9IGggJSAxMiA9PT0gMCA/IDEyIDogaCAlIDEyOwogIHJldHVybiBtID09PSAwID8gYCR7bWVyaWRpZW19ICR7aDEyfeyLnGAg' +
+  'OiBgJHttZXJpZGllbX0gJHtoMTJ97IucICR7bX3rtoRgOwp9CgovKiog7Yag7JqU7J28ICovCmV4cG9ydCBmdW5jdGlvbiBmb3JtYXRXZWVrZGF5KCkgewog' +
+  'IHJldHVybiBgJHtXRUVLREFZU1t3ZWRkaW5nRGF0ZSgpLmdldERheSgpXX3smpTsnbxgOwp9CgovKiogMjAyNi4xMi4xOSAqLwpleHBvcnQgZnVuY3Rpb24g' +
+  'Zm9ybWF0U2hvcnREYXRlKCkgewogIHJldHVybiBDT05GSUcud2VkZGluZy5kYXRlLnJlcGxhY2VBbGwoJy0nLCAnLicpOwp9CgovKiog6rOg7J247J2066m0' +
+  'IOydtOumhCDslZ7sl5Ag5pWFIOulvCDrtpnsnbjri6QgKi8KZXhwb3J0IGZ1bmN0aW9uIHdpdGhEZWNlYXNlZChuYW1lLCBkZWNlYXNlZCkgewogIHJldHVy' +
+  'biBkZWNlYXNlZCA/IGDmlYUgJHtuYW1lfWAgOiBuYW1lOwp9Cg=='
+)
+
 Write-ProjectFile -Path 'src\components\common\CurtainCover.jsx' -Base64 (
   'aW1wb3J0IFJlYWN0IGZyb20gJ3JlYWN0JzsKaW1wb3J0IHsgQ09ORklHIH0gZnJvbSAnLi4vLi4vY29uZmlnL2ludml0YXRpb25Db25maWcnOwppbXBvcnQg' +
-  'eyBmb3JtYXRGdWxsRGF0ZSwgZm9ybWF0VGltZSwgZm9ybWF0U2hvcnREYXRlIH0gZnJvbSAnLi4vLi4vbGliL2Zvcm1hdCc7CmltcG9ydCB7IHNob3dzVGlt' +
-  'ZSwgc2hvd3NWZW51ZSB9IGZyb20gJy4uLy4uL2xpYi92aXNpYmlsaXR5JzsKCi8qKgogKiDssqsg7ZmU66m0IChDT05GSUcudXNlQ3VydGFpbiDsnbQgdHJ1' +
-  'ZSDsnbwg65WM66eMIO2RnOyLnCkKICoKICogNDgwcHgg7Luo7YWM7J2064SI7JeQIOqwh+2eiOyngCDslYrqs6Ag7ZmU66m0IOyghOyytOulvCDssYTsmrTr' +
-  'i6QuCiAqIOyCrOynhCDsl4bsnbQsIOyyreyyqeyepSDsubTrk5zsspjrn7wg7J207KSRIO2FjOuRkOumrOyZgCDquIDsnpDrp4zsnLzroZwg6rWs7ISx7ZaI' +
-  '64ukLgogKgogKiDrp4Htgawg7KKF66WY7JeQIOuUsOudvCDshLHqsqnsnbQg64uk66W066+A66GcIOusuOq1rOyZgCDrhbjstpwg7KCV67O066W8IOuCmOuI' +
-  'iOuLpC4KICogICDrgrTruYjsmqkgOiDstIjrjIDtlZjripQg7J6Q66asIOKGkiAnSU5WSVRBVElPTicgLyAn7LSI64yA7J6lIOyXtOq4sCcgLyDrgqDsp5wg' +
-  'KyDsi5zqsIQgKyDsmIjsi53snqUKICogICDsmbjrtoDsmqkgOiDslYzrpqzripQg7IaM7IudICAg4oaSICdXRURESU5HIEFOTk9VTkNFTUVOVCcgLyAn7IaM' +
-  '7IudIOuztOq4sCcgLyDrgqDsp5zrp4wKICoKICog7Jm467aAIOyGkOuLmOydgCDstIjrjIDtlZjsp4Ag7JWK7Jy866+A66GcLCDsmbjrtoDsmqnsl5DshJzr' +
-  'ipQg7Iuc6rCE6rO8IOyYiOyLneyepeydhCDtkZzsi5ztlZjsp4Ag7JWK64qU64ukLgogKiAo7Jik7Iuc652864qUIOucu+ycvOuhnCDsnb3tnpAg7KCV67O0' +
-  '66W8IOuCqOq4sOyngCDslYrripTri6QpCiAqICjrrLjqtazrpbwg67CU6r646rOgIOyLtuycvOuptCBpbnZpdGF0aW9uQ29uZmlnLmpzIOydmCDqsIEg7KKF' +
-  '66WY7JeQCiAqICBjdXJ0YWluTGFiZWwgLyBjdXJ0YWluQnV0dG9uIOydhCDstpTqsIDtlZjrqbQg6re4IOqwkuydtCDsmrDshKDtlZzri6QpCiAqLwpjb25z' +
-  'dCBDVVJUQUlOX1RFWFQgPSB7CiAgZ3Vlc3Q6IHsgbGFiZWw6ICdJTlZJVEFUSU9OJywgYnV0dG9uOiAn7LSI64yA7J6lIOyXtOq4sCcgfSwKICBhbm5vdW5j' +
-  'ZW1lbnQ6IHsgbGFiZWw6ICdXRURESU5HIEFOTk9VTkNFTUVOVCcsIGJ1dHRvbjogJ+yGjOyLnSDrs7TquLAnIH0sCn07CgpleHBvcnQgZGVmYXVsdCBmdW5j' +
-  'dGlvbiBDdXJ0YWluQ292ZXIoeyBvbk9wZW4sIHZpZXcgfSkgewogIGNvbnN0IHsgZ3Jvb20sIGJyaWRlIH0gPSBDT05GSUcuY291cGxlOwogIGNvbnN0IHsg' +
-  'dmVudWUsIGhhbGwgfSA9IENPTkZJRy53ZWRkaW5nOwoKICBjb25zdCBwcmVzZXQgPSBDVVJUQUlOX1RFWFRbdmlldz8udHlwZV0gPz8gQ1VSVEFJTl9URVhU' +
-  'LmFubm91bmNlbWVudDsKICBjb25zdCBsYWJlbCA9IHZpZXc/LmN1cnRhaW5MYWJlbCA/PyBwcmVzZXQubGFiZWw7CiAgY29uc3QgYnV0dG9uVGV4dCA9IHZp' +
-  'ZXc/LmN1cnRhaW5CdXR0b24gPz8gcHJlc2V0LmJ1dHRvbjsKCiAgcmV0dXJuICgKICAgIDxkaXYgY2xhc3NOYW1lPSJjb3Zlci1zY3JlZW4gZml4ZWQgaW5z' +
-  'ZXQtMCB6LTQwIGZsZXggaXRlbXMtY2VudGVyIGp1c3RpZnktY2VudGVyIG92ZXJmbG93LWhpZGRlbiBiZy1iZyBweC02IHRleHQtaW5rIj4KICAgICAgey8q' +
-  'IOyyreyyqeyepSDsubTrk5wg64qQ64KM7J2YIOydtOykkSDthYzrkZDrpqwgKi99CiAgICAgIDxkaXYgY2xhc3NOYW1lPSJjb3Zlci1mcmFtZSBwb2ludGVy' +
-  'LWV2ZW50cy1ub25lIGFic29sdXRlIGluc2V0LTQgYm9yZGVyIGJvcmRlci1saW5lLzI1IHNtOmluc2V0LTgiIC8+CiAgICAgIDxkaXYKICAgICAgICBjbGFz' +
-  'c05hbWU9ImNvdmVyLWZyYW1lIHBvaW50ZXItZXZlbnRzLW5vbmUgYWJzb2x1dGUgaW5zZXQtWzIycHhdIGJvcmRlciBib3JkZXItbGluZS8xMiBzbTppbnNl' +
-  'dC1bMzhweF0iCiAgICAgICAgc3R5bGU9e3sgYW5pbWF0aW9uRGVsYXk6ICcxNDBtcycgfX0KICAgICAgLz4KCiAgICAgIDxkaXYgY2xhc3NOYW1lPSJyZWxh' +
-  'dGl2ZSBmbGV4IHctZnVsbCBtYXgtdy1zbSBmbGV4LWNvbCBpdGVtcy1jZW50ZXIgZ2FwLTEyIHRleHQtY2VudGVyIj4KICAgICAgICA8cCBjbGFzc05hbWU9' +
-  'ImFuaW1hdGUtZW50ZXIgZm9udC1iYXRhbmcgdGV4dC1bMTBweF0gdHJhY2tpbmctWzAuNTVlbV0gdGV4dC1hY2NlbnQiPgogICAgICAgICAge2xhYmVsfQog' +
-  'ICAgICAgIDwvcD4KCiAgICAgICAgPGRpdiBjbGFzc05hbWU9ImFuaW1hdGUtZW50ZXIgc3BhY2UteS01IiBzdHlsZT17eyBhbmltYXRpb25EZWxheTogJzI1' +
-  'MG1zJyB9fT4KICAgICAgICAgIDxoMSBjbGFzc05hbWU9ImZvbnQtYmF0YW5nIHRleHQtWzIuNnJlbV0gZm9udC1ib2xkIGxlYWRpbmctbm9uZSI+e2dyb29t' +
-  'Lm5hbWV9PC9oMT4KCiAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT0iZmxleCBpdGVtcy1jZW50ZXIganVzdGlmeS1jZW50ZXIgZ2FwLTMiPgogICAgICAgICAg' +
-  'ICA8c3BhbiBjbGFzc05hbWU9ImgtcHggdy04IGJnLWxpbmUvNDAiIGFyaWEtaGlkZGVuPSJ0cnVlIiAvPgogICAgICAgICAgICA8c3BhbiBjbGFzc05hbWU9' +
-  'ImZvbnQtYmF0YW5nIHRleHQteHMgdGV4dC1hY2NlbnQiPuq3uOumrOqzoDwvc3Bhbj4KICAgICAgICAgICAgPHNwYW4gY2xhc3NOYW1lPSJoLXB4IHctOCBi' +
-  'Zy1saW5lLzQwIiBhcmlhLWhpZGRlbj0idHJ1ZSIgLz4KICAgICAgICAgIDwvZGl2PgoKICAgICAgICAgIDxoMSBjbGFzc05hbWU9ImZvbnQtYmF0YW5nIHRl' +
-  'eHQtWzIuNnJlbV0gZm9udC1ib2xkIGxlYWRpbmctbm9uZSI+e2JyaWRlLm5hbWV9PC9oMT4KICAgICAgICA8L2Rpdj4KCiAgICAgICAgPGRpdiBjbGFzc05h' +
-  'bWU9ImFuaW1hdGUtZW50ZXIgc3BhY2UteS0yIiBzdHlsZT17eyBhbmltYXRpb25EZWxheTogJzQ1MG1zJyB9fT4KICAgICAgICAgIDxwIGNsYXNzTmFtZT0i' +
-  'Zm9udC1iYXRhbmcgdGV4dC1iYXNlIHRyYWNraW5nLVswLjJlbV0gdGV4dC1hY2NlbnQgdGFidWxhci1udW1zIj4KICAgICAgICAgICAge2Zvcm1hdFNob3J0' +
-  'RGF0ZSgpfQogICAgICAgICAgPC9wPgogICAgICAgICAgPHAgY2xhc3NOYW1lPSJ0ZXh0LXhzIGxlYWRpbmctNiB0ZXh0LW11dGVkIj4KICAgICAgICAgICAg' +
-  'e2Zvcm1hdEZ1bGxEYXRlKCl9CiAgICAgICAgICAgIHtzaG93c1RpbWUodmlldykgJiYgYCAke2Zvcm1hdFRpbWUoKX1gfQogICAgICAgICAgICB7c2hvd3NW' +
-  'ZW51ZSh2aWV3KSAmJiAoCiAgICAgICAgICAgICAgPD4KICAgICAgICAgICAgICAgIDxiciAvPgogICAgICAgICAgICAgICAge3ZlbnVlfSB7aGFsbH0KICAg' +
-  'ICAgICAgICAgICA8Lz4KICAgICAgICAgICAgKX0KICAgICAgICAgIDwvcD4KICAgICAgICA8L2Rpdj4KCiAgICAgICAgPGJ1dHRvbgogICAgICAgICAgb25D' +
-  'bGljaz17b25PcGVufQogICAgICAgICAgY2xhc3NOYW1lPSJhbmltYXRlLWVudGVyIHJvdW5kZWQtZnVsbCBib3JkZXIgYm9yZGVyLWxpbmUgYmctYWNjZW50' +
-  'IHB4LTkgcHktMy41IHRleHQtc20gZm9udC1ib2xkIHRyYWNraW5nLXdpZGUgdGV4dC1hY2NlbnQtZmcgc2hhZG93LWxnIHRyYW5zaXRpb24tdHJhbnNmb3Jt' +
-  'IGFjdGl2ZTpzY2FsZS05NSIKICAgICAgICAgIHN0eWxlPXt7IGFuaW1hdGlvbkRlbGF5OiAnNjUwbXMnIH19CiAgICAgICAgPgogICAgICAgICAge2J1dHRv' +
-  'blRleHR9CiAgICAgICAgPC9idXR0b24+CiAgICAgIDwvZGl2PgogICAgPC9kaXY+CiAgKTsKfQo='
+  'eyBmb3JtYXRXZWVrZGF5LCBmb3JtYXRUaW1lLCBmb3JtYXRTaG9ydERhdGUgfSBmcm9tICcuLi8uLi9saWIvZm9ybWF0JzsKaW1wb3J0IHsgc2hvd3NUaW1l' +
+  'LCBzaG93c1ZlbnVlIH0gZnJvbSAnLi4vLi4vbGliL3Zpc2liaWxpdHknOwoKLyoqCiAqIOyyqyDtmZTrqbQgKENPTkZJRy51c2VDdXJ0YWluIOydtCB0cnVl' +
+  'IOydvCDrlYzrp4wg7ZGc7IucKQogKgogKiA0ODBweCDsu6jthYzsnbTrhIjsl5Ag6rCH7Z6I7KeAIOyViuqzoCDtmZTrqbQg7KCE7LK066W8IOyxhOyatOuL' +
+  'pC4KICog7IKs7KeEIOyXhuydtCwg7LKt7LKp7J6lIOy5tOuTnOyymOufvCDsnbTspJEg7YWM65GQ66as7JmAIOq4gOyekOunjOycvOuhnCDqtazshLHtlojr' +
+  'i6QuCiAqCiAqIOunge2BrCDsooXrpZjsl5Ag65Sw6528IOyEseqyqeydtCDri6TrpbTrr4DroZwg66y46rWs7JmAIOuFuOy2nCDsoJXrs7Trpbwg64KY64iI' +
+  '64ukLgogKiAgIOuCtOu5iOyaqSA6ICdJTlZJVEFUSU9OJyAvICfstIjrjIDsnqUg7Je06riwJwogKiAgICAgICAgICAgICAgMjAyNi4xMi4xOQogKiAgICAg' +
+  'ICAgICAgICAg7Yag7JqU7J28IOyYpO2bhCAx7IucCiAqICAgICAgICAgICAgICBPT+ybqOuUqe2ZgCAz7Li1IOuLqOuPhe2ZgAogKgogKiAgIOyZuOu2gOya' +
+  'qSA6ICdXRURESU5HIEFOTk9VTkNFTUVOVCcgLyAn7IaM7IudIOuztOq4sCcKICogICAgICAgICAgICAgIDIwMjYuMTIuMTkKICogICAgICAgICAgICAgICjs' +
+  'lYTrnpgg7KSEIOyXhuydjCkKICoKICog7YGwIOq4gOyUqOyXkCDsnbTrr7gg64Kg7Kec6rCAIOyeiOycvOuvgOuhnCDslYTrnpgg7KSE7JeQ7ISc64qUIOuC' +
+  'oOynnOulvCDrsJjrs7XtlZjsp4Ag7JWK6rOgCiAqIOyalOydvOqzvCDsi5zqsITrp4wg7KCB64qU64ukLgogKgogKiDsmbjrtoAg7IaQ64uY7J2AIOy0iOuM' +
+  'gO2VmOyngCDslYrsnLzrr4DroZwsIOyZuOu2gOyaqeyXkOyEnOuKlCDsi5zqsITqs7wg7JiI7Iud7J6l7J2EIO2RnOyLnO2VmOyngCDslYrripTri6QuCiAq' +
+  'ICjsmKTsi5zrnbzripQg65y77Jy866GcIOydve2ekCDsoJXrs7Trpbwg64Ko6riw7KeAIOyViuuKlOuLpCkKICogKOusuOq1rOulvCDrsJTqvrjqs6Ag7Iu2' +
+  '7Jy866m0IGludml0YXRpb25Db25maWcuanMg7J2YIOqwgSDsooXrpZjsl5AKICogIGN1cnRhaW5MYWJlbCAvIGN1cnRhaW5CdXR0b24g7J2EIOy2lOqwgO2V' +
+  'mOuptCDqt7gg6rCS7J20IOyasOyEoO2VnOuLpCkKICovCmNvbnN0IENVUlRBSU5fVEVYVCA9IHsKICBndWVzdDogeyBsYWJlbDogJ0lOVklUQVRJT04nLCBi' +
+  'dXR0b246ICfstIjrjIDsnqUg7Je06riwJyB9LAogIGFubm91bmNlbWVudDogeyBsYWJlbDogJ1dFRERJTkcgQU5OT1VOQ0VNRU5UJywgYnV0dG9uOiAn7IaM' +
+  '7IudIOuztOq4sCcgfSwKfTsKCmV4cG9ydCBkZWZhdWx0IGZ1bmN0aW9uIEN1cnRhaW5Db3Zlcih7IG9uT3BlbiwgdmlldyB9KSB7CiAgY29uc3QgeyBncm9v' +
+  'bSwgYnJpZGUgfSA9IENPTkZJRy5jb3VwbGU7CiAgY29uc3QgeyB2ZW51ZSwgaGFsbCB9ID0gQ09ORklHLndlZGRpbmc7CgogIGNvbnN0IHByZXNldCA9IENV' +
+  'UlRBSU5fVEVYVFt2aWV3Py50eXBlXSA/PyBDVVJUQUlOX1RFWFQuYW5ub3VuY2VtZW50OwogIGNvbnN0IGxhYmVsID0gdmlldz8uY3VydGFpbkxhYmVsID8/' +
+  'IHByZXNldC5sYWJlbDsKICBjb25zdCBidXR0b25UZXh0ID0gdmlldz8uY3VydGFpbkJ1dHRvbiA/PyBwcmVzZXQuYnV0dG9uOwoKICByZXR1cm4gKAogICAg' +
+  'PGRpdiBjbGFzc05hbWU9ImNvdmVyLXNjcmVlbiBmaXhlZCBpbnNldC0wIHotNDAgZmxleCBpdGVtcy1jZW50ZXIganVzdGlmeS1jZW50ZXIgb3ZlcmZsb3ct' +
+  'aGlkZGVuIGJnLWJnIHB4LTYgdGV4dC1pbmsiPgogICAgICB7Lyog7LKt7LKp7J6lIOy5tOuTnCDripDrgozsnZgg7J207KSRIO2FjOuRkOumrCAqL30KICAg' +
+  'ICAgPGRpdiBjbGFzc05hbWU9ImNvdmVyLWZyYW1lIHBvaW50ZXItZXZlbnRzLW5vbmUgYWJzb2x1dGUgaW5zZXQtNCBib3JkZXIgYm9yZGVyLWxpbmUvMjUg' +
+  'c206aW5zZXQtOCIgLz4KICAgICAgPGRpdgogICAgICAgIGNsYXNzTmFtZT0iY292ZXItZnJhbWUgcG9pbnRlci1ldmVudHMtbm9uZSBhYnNvbHV0ZSBpbnNl' +
+  'dC1bMjJweF0gYm9yZGVyIGJvcmRlci1saW5lLzEyIHNtOmluc2V0LVszOHB4XSIKICAgICAgICBzdHlsZT17eyBhbmltYXRpb25EZWxheTogJzE0MG1zJyB9' +
+  'fQogICAgICAvPgoKICAgICAgPGRpdiBjbGFzc05hbWU9InJlbGF0aXZlIGZsZXggdy1mdWxsIG1heC13LXNtIGZsZXgtY29sIGl0ZW1zLWNlbnRlciBnYXAt' +
+  'MTIgdGV4dC1jZW50ZXIiPgogICAgICAgIDxwIGNsYXNzTmFtZT0iYW5pbWF0ZS1lbnRlciBmb250LWJhdGFuZyB0ZXh0LVsxMHB4XSB0cmFja2luZy1bMC41' +
+  'NWVtXSB0ZXh0LWFjY2VudCI+CiAgICAgICAgICB7bGFiZWx9CiAgICAgICAgPC9wPgoKICAgICAgICA8ZGl2IGNsYXNzTmFtZT0iYW5pbWF0ZS1lbnRlciBz' +
+  'cGFjZS15LTUiIHN0eWxlPXt7IGFuaW1hdGlvbkRlbGF5OiAnMjUwbXMnIH19PgogICAgICAgICAgPGgxIGNsYXNzTmFtZT0iZm9udC1iYXRhbmcgdGV4dC1b' +
+  'Mi42cmVtXSBmb250LWJvbGQgbGVhZGluZy1ub25lIj57Z3Jvb20ubmFtZX08L2gxPgoKICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPSJmbGV4IGl0ZW1zLWNl' +
+  'bnRlciBqdXN0aWZ5LWNlbnRlciBnYXAtMyI+CiAgICAgICAgICAgIDxzcGFuIGNsYXNzTmFtZT0iaC1weCB3LTggYmctbGluZS80MCIgYXJpYS1oaWRkZW49' +
+  'InRydWUiIC8+CiAgICAgICAgICAgIDxzcGFuIGNsYXNzTmFtZT0iZm9udC1iYXRhbmcgdGV4dC14cyB0ZXh0LWFjY2VudCI+6re466as6rOgPC9zcGFuPgog' +
+  'ICAgICAgICAgICA8c3BhbiBjbGFzc05hbWU9ImgtcHggdy04IGJnLWxpbmUvNDAiIGFyaWEtaGlkZGVuPSJ0cnVlIiAvPgogICAgICAgICAgPC9kaXY+Cgog' +
+  'ICAgICAgICAgPGgxIGNsYXNzTmFtZT0iZm9udC1iYXRhbmcgdGV4dC1bMi42cmVtXSBmb250LWJvbGQgbGVhZGluZy1ub25lIj57YnJpZGUubmFtZX08L2gx' +
+  'PgogICAgICAgIDwvZGl2PgoKICAgICAgICA8ZGl2IGNsYXNzTmFtZT0iYW5pbWF0ZS1lbnRlciBzcGFjZS15LTIiIHN0eWxlPXt7IGFuaW1hdGlvbkRlbGF5' +
+  'OiAnNDUwbXMnIH19PgogICAgICAgICAgPHAgY2xhc3NOYW1lPSJmb250LWJhdGFuZyB0ZXh0LWJhc2UgdHJhY2tpbmctWzAuMmVtXSB0ZXh0LWFjY2VudCB0' +
+  'YWJ1bGFyLW51bXMiPgogICAgICAgICAgICB7Zm9ybWF0U2hvcnREYXRlKCl9CiAgICAgICAgICA8L3A+CiAgICAgICAgICB7KHNob3dzVGltZSh2aWV3KSB8' +
+  'fCBzaG93c1ZlbnVlKHZpZXcpKSAmJiAoCiAgICAgICAgICAgIDxwIGNsYXNzTmFtZT0idGV4dC14cyBsZWFkaW5nLTYgdGV4dC1tdXRlZCI+CiAgICAgICAg' +
+  'ICAgICAge3Nob3dzVGltZSh2aWV3KSAmJiBgJHtmb3JtYXRXZWVrZGF5KCl9ICR7Zm9ybWF0VGltZSgpfWB9CiAgICAgICAgICAgICAge3Nob3dzVGltZSh2' +
+  'aWV3KSAmJiBzaG93c1ZlbnVlKHZpZXcpICYmIDxiciAvPn0KICAgICAgICAgICAgICB7c2hvd3NWZW51ZSh2aWV3KSAmJiBgJHt2ZW51ZX0gJHtoYWxsfWB9' +
+  'CiAgICAgICAgICAgIDwvcD4KICAgICAgICAgICl9CiAgICAgICAgPC9kaXY+CgogICAgICAgIDxidXR0b24KICAgICAgICAgIG9uQ2xpY2s9e29uT3Blbn0K' +
+  'ICAgICAgICAgIGNsYXNzTmFtZT0iYW5pbWF0ZS1lbnRlciByb3VuZGVkLWZ1bGwgYm9yZGVyIGJvcmRlci1saW5lIGJnLWFjY2VudCBweC05IHB5LTMuNSB0' +
+  'ZXh0LXNtIGZvbnQtYm9sZCB0cmFja2luZy13aWRlIHRleHQtYWNjZW50LWZnIHNoYWRvdy1sZyB0cmFuc2l0aW9uLXRyYW5zZm9ybSBhY3RpdmU6c2NhbGUt' +
+  'OTUiCiAgICAgICAgICBzdHlsZT17eyBhbmltYXRpb25EZWxheTogJzY1MG1zJyB9fQogICAgICAgID4KICAgICAgICAgIHtidXR0b25UZXh0fQogICAgICAg' +
+  'IDwvYnV0dG9uPgogICAgICA8L2Rpdj4KICAgIDwvZGl2PgogICk7Cn0K'
 )
 
 Write-ProjectFile -Path 'src\components\common\IntroSection.jsx' -Base64 (
@@ -242,22 +275,34 @@ Write-ProjectFile -Path 'src\App.jsx' -Base64 (
 
 Write-Host ''
 $checks = @(
-  @{ Name = '노출 규칙 파일';   Path = 'src\lib\visibility.js';                    Pattern = 'showsTime' },
-  @{ Name = '첫 화면';          Path = 'src\components\common\CurtainCover.jsx';   Pattern = 'showsVenue' },
-  @{ Name = '히어로';           Path = 'src\components\common\IntroSection.jsx';   Pattern = 'showsTime' },
-  @{ Name = 'D-DAY';            Path = 'src\components\common\DdaySection.jsx';    Pattern = 'showsTime' },
-  @{ Name = '외부용 페이지';     Path = 'src\pages\AnnouncementPage.jsx';            Pattern = 'view=\{view\}' }
+  @{ Name = '노출 규칙 파일';      Path = 'src\lib\visibility.js';                  Pattern = 'showsTime' },
+  @{ Name = '요일 함수';           Path = 'src\lib\format.js';                      Pattern = 'formatWeekday' },
+  @{ Name = '커튼 날짜 중복 제거';  Path = 'src\components\common\CurtainCover.jsx'; Pattern = 'formatWeekday' },
+  @{ Name = '히어로 시간 숨김';     Path = 'src\components\common\IntroSection.jsx'; Pattern = 'showsTime' },
+  @{ Name = 'D-DAY 시간 숨김';      Path = 'src\components\common\DdaySection.jsx';  Pattern = 'showsTime' },
+  @{ Name = '외부용 페이지 전달';   Path = 'src\pages\AnnouncementPage.jsx';          Pattern = 'view=\{view\}' }
 )
 
+$fail = 0
 foreach ($c in $checks) {
   if (Select-String -Path $c.Path -Pattern $c.Pattern -Quiet) {
     Write-Host ('  [OK] ' + $c.Name) -ForegroundColor Green
   } else {
     Write-Host ('  [실패] ' + $c.Name) -ForegroundColor Red
+    $fail++
   }
 }
 
 Write-Host ''
-Write-Host '확인:' -ForegroundColor Cyan
-Write-Host '  http://localhost:5173/mobile-invitation/              날짜만'
-Write-Host '  http://localhost:5173/mobile-invitation/?type=guest   날짜 + 시간 + 예식장'
+if ($fail -eq 0) {
+  Write-Host '모두 적용됐습니다.' -ForegroundColor Green
+} else {
+  Write-Host "$fail 건 실패. 위 목록을 알려주세요." -ForegroundColor Red
+}
+
+Write-Host ''
+Write-Host '개발 서버를 껐다가 다시 켜고 (Ctrl+C 후 npm run dev)' -ForegroundColor Cyan
+Write-Host '브라우저는 Ctrl+Shift+R 로 새로고침하세요.' -ForegroundColor Cyan
+Write-Host ''
+Write-Host '  http://localhost:5173/mobile-invitation/              외부용'
+Write-Host '  http://localhost:5173/mobile-invitation/?type=guest   내빈용'
