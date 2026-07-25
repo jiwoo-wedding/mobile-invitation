@@ -30,9 +30,10 @@ export function formatWeekday() {
   return `${WEEKDAYS[weddingDate().getDay()]}요일`;
 }
 
-/** 2026.12.19 */
+/** 2026.12.19(토) */
 export function formatShortDate() {
-  return CONFIG.wedding.date.replaceAll('-', '.');
+  const dt = weddingDate();
+  return `${CONFIG.wedding.date.replaceAll('-', '.')}`;
 }
 
 /** 고인이면 이름 앞에 故 를 붙인다 */
