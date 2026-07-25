@@ -100,7 +100,7 @@ export const CONFIG = {
       {
         folder: 'trappist_monastery',
         title: '트라피스트 수도원',
-        caption: '삼나무 길 끝의 붉은 벽돌 수도원',
+        caption: '고요한 삼나무 길 끝의 수도원',
         mapUrl: 'https://maps.app.goo.gl/CT7ri5XqGvvLu6tV9',
       },
     ],
