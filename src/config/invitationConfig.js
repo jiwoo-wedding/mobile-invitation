@@ -36,7 +36,7 @@ export const CONFIG = {
     },
     bride: {
       name: '엄지우',
-      order: '장녀',
+      order: '차녀',
       father: '엄길용',
       mother: '조영순',
       fatherDeceased: false,
