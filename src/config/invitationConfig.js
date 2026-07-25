@@ -140,9 +140,11 @@ export const CONFIG = {
     groom: [
       { role: '신랑', bank: 'OO은행', number: '110-123-456789', holder: '장성빈' },
       { role: '아버지', bank: 'OO은행', number: '110-123-456789', holder: '장재필' },
+      { role: '어머니', bank: 'OO은행', number: '110-123-456789', holder: '최미순' },
     ],
     bride: [
       { role: '신부', bank: 'OO은행', number: '3333-01-1234567', holder: '엄지우' },
+      { role: '아버지', bank: 'OO은행', number: '3333-01-1234567', holder: '엄길용' },
       { role: '어머니', bank: 'OO은행', number: '3333-01-1234567', holder: '조영순' },
     ],
   },
