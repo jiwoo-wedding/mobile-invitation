@@ -67,6 +67,26 @@ for (const [filePath, url] of sortEntries(Object.entries(galleryModules))) {
 }
 
 /**
+ * 폴더 이름을 비교용으로 단순화한다.
+ * 'Akarenga Warehouse', 'akarenga_warehouse', 'akarenga-warehouse' 를 모두 같게 본다.
+ * 폴더명을 바꿀 때마다 config 를 같이 고치지 않아도 되도록 하기 위한 장치다.
+ */
+function normalizeFolder(name) {
+  return (name ?? '').toLowerCase().replace(/[\s_-]+/g, '');
+}
+
+const byNormalizedFolder = {};
+for (const [folder, urls] of Object.entries(byFolder)) {
+  byNormalizedFolder[normalizeFolder(folder)] = { folder, urls };
+}
+
+/** config 에 적힌 폴더 이름으로 실제 폴더를 찾는다 (표기 차이는 무시) */
+function findFolder(name) {
+  if (byFolder[name]) return { folder: name, urls: byFolder[name] };
+  return byNormalizedFolder[normalizeFolder(name)] ?? null;
+}
+
+/**
  * 갤러리 그룹 목록.
  * 순서는 config 의 gallery.groups 순서를 따른다.
  * config 에 적지 않은 폴더가 있으면 뒤에 그대로 붙인다(사진이 사라지지 않게).
@@ -74,25 +94,29 @@ for (const [filePath, url] of sortEntries(Object.entries(galleryModules))) {
 const configuredGroups = CONFIG.gallery?.groups ?? [];
 const configuredFolders = new Set(configuredGroups.map((g) => g.folder));
 
-export const galleryGroups = [
-  ...configuredGroups
-    .map((group) => ({
-      ...group,
-      images: byFolder[group.folder] ?? [],
-    }))
-    .filter((group) => group.images.length > 0),
+const matchedFolders = new Set();
 
-  ...Object.keys(byFolder)
-    .filter((folder) => !configuredFolders.has(folder))
-    .sort((a, b) => a.localeCompare(b, 'ko'))
-    .map((folder) => ({
-      folder,
-      title: folder || '기타',
-      caption: '',
-      mapUrl: '',
-      images: byFolder[folder],
-    })),
-];
+const configured = configuredGroups
+  .map((group) => {
+    const found = findFolder(group.folder);
+    if (found) matchedFolders.add(found.folder);
+    return { ...group, images: found?.urls ?? [] };
+  })
+  .filter((group) => group.images.length > 0);
+
+// config 에 없는 폴더도 사진이 사라지지 않도록 뒤에 붙인다
+const leftover = Object.keys(byFolder)
+  .filter((folder) => !matchedFolders.has(folder))
+  .sort((a, b) => a.localeCompare(b, 'ko'))
+  .map((folder) => ({
+    folder,
+    title: folder || '기타',
+    caption: '',
+    mapUrl: '',
+    images: byFolder[folder],
+  }));
+
+export const galleryGroups = [...configured, ...leftover];
 
 /** 그룹 순서대로 이어붙인 전체 목록 (확대 보기에서 앞뒤로 넘길 때 사용) */
 export const galleryImages = galleryGroups.flatMap((group) => group.images);
@@ -127,7 +151,7 @@ function pickMainImage() {
 
     let pool = galleryImages;
     if (folder) {
-      pool = byFolder[folder] ?? [];
+      pool = findFolder(folder)?.urls ?? [];
       if (pool.length === 0) {
         if (import.meta.env.DEV) {
           console.warn(
@@ -158,12 +182,18 @@ function pickMainImage() {
 }
 
 if (import.meta.env.DEV) {
-  const missing = configuredGroups.filter((g) => !(byFolder[g.folder]?.length > 0));
+  const missing = configuredGroups.filter((g) => !findFolder(g.folder));
   if (missing.length > 0) {
     console.warn(
-      `[청첩장] 사진이 없는 갤러리 폴더: ${missing.map((g) => g.folder).join(', ')}. ` +
-        `src/assets/gallery 아래 폴더 이름과 config 의 folder 값이 같은지 확인하세요. ` +
-        `현재 발견된 폴더: ${Object.keys(byFolder).map((f) => f || '(최상단)').join(', ')}`
+      `[청첩장] config 의 갤러리 폴더를 찾지 못했습니다: ${missing.map((g) => g.folder).join(', ')}\n` +
+        `실제 폴더: ${Object.keys(byFolder).map((f) => f || '(최상단)').join(', ')}\n` +
+        `대소문자와 공백/밑줄 차이는 무시하므로, 철자 자체가 다른지 확인하세요.`
+    );
+  }
+  if (leftover.length > 0) {
+    console.warn(
+      `[청첩장] config 에 없어 제목·지도 링크 없이 표시되는 폴더: ` +
+        `${leftover.map((g) => g.folder || '(최상단)').join(', ')}`
     );
   }
 }
