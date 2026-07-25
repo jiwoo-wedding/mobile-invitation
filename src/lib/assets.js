@@ -107,16 +107,54 @@ const galleryByName = Object.fromEntries(
 
 /**
  * 첫 화면 대표 사진.
- * CONFIG.mainPhoto 에 적은 파일명을 src/assets/gallery 전체(하위 폴더 포함)에서 찾는다.
- * 이름이 안 맞으면 갤러리 첫 장으로 대신한다.
+ *
+ * CONFIG.mainPhoto 에 쓸 수 있는 값
+ *   'trappi12.jpg'                 그 파일을 쓴다 (하위 폴더 안에 있어도 파일명만 적으면 된다)
+ *   'random'                       갤러리 전체에서 무작위로 고른다 (열 때마다 바뀐다)
+ *   'random:Trappist Monastery'    그 폴더 안에서만 무작위로 고른다
+ *
+ * 파일명이 안 맞으면 갤러리 첫 장으로 대신하고, 개발 중에는 콘솔에 경고를 남긴다.
  */
-const requestedMain = CONFIG.mainPhoto;
+const requestedMain = (CONFIG.mainPhoto ?? '').trim();
 
-if (import.meta.env.DEV && requestedMain && !galleryByName[requestedMain]) {
-  console.warn(
-    `[청첩장] mainPhoto '${requestedMain}' 를 src/assets/gallery 에서 찾지 못했습니다. ` +
-      `사용 가능한 파일: ${Object.keys(galleryByName).sort().join(', ')}`
-  );
+function pickMainImage() {
+  if (galleryImages.length === 0) return null;
+
+  // 무작위 지정인지 확인
+  if (requestedMain.toLowerCase().startsWith('random')) {
+    // 'random' 뒤에 ':폴더이름' 이 붙어 있으면 그 폴더로 범위를 좁힌다
+    const folder = requestedMain.slice('random'.length).replace(/^:/, '').trim();
+
+    let pool = galleryImages;
+    if (folder) {
+      pool = byFolder[folder] ?? [];
+      if (pool.length === 0) {
+        if (import.meta.env.DEV) {
+          console.warn(
+            `[청첩장] mainPhoto 의 무작위 대상 폴더 '${folder}' 에서 사진을 찾지 못했습니다. ` +
+              `갤러리 전체에서 고릅니다. 발견된 폴더: ` +
+              `${Object.keys(byFolder).map((f) => f || '(최상단)').join(', ')}`
+          );
+        }
+        pool = galleryImages;
+      }
+    }
+
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+
+  // 파일명 지정
+  if (requestedMain && !galleryByName[requestedMain]) {
+    if (import.meta.env.DEV) {
+      console.warn(
+        `[청첩장] mainPhoto '${requestedMain}' 를 src/assets/gallery 에서 찾지 못했습니다. ` +
+          `갤러리 첫 장을 대신 씁니다. ` +
+          `사용 가능한 파일: ${Object.keys(galleryByName).sort().join(', ')}`
+      );
+    }
+  }
+
+  return galleryByName[requestedMain] ?? galleryImages[0];
 }
 
 if (import.meta.env.DEV) {
@@ -130,7 +168,7 @@ if (import.meta.env.DEV) {
   }
 }
 
-export const mainImage = galleryByName[requestedMain] ?? galleryImages[0] ?? null;
+export const mainImage = pickMainImage();
 
 /** 갤러리 파일명으로 이미지 주소를 직접 찾을 때 */
 export const galleryImageByName = (filename) => galleryByName[filename] ?? null;
