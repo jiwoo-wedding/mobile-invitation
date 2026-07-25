@@ -87,21 +87,15 @@ export const CONFIG = {
     groups: [
       {
         folder: 'akarenga_warehouse',
-        title: '가나모리 아카렌가 창고',
-        caption: '하코다테 베이의 붉은 벽돌 창고',
-        mapUrl: 'https://maps.app.goo.gl/1JMraHfQSkFvTios5',
+        title: '하코다테 베이의 붉은 벽돌 창고'
       },
       {
         folder: 'hachiman_zaka',
-        title: '하치만자카',
-        caption: '바다로 내려가는 언덕길',
-        mapUrl: 'https://maps.app.goo.gl/dW6pjXTxTQg8Rdds8',
+        title: '바다가 내려다보이는 언덕길'
       },
       {
         folder: 'trappist_monastery',
-        title: '트라피스트 수도원',
-        caption: '고요한 삼나무 길 끝의 수도원',
-        mapUrl: 'https://maps.app.goo.gl/CT7ri5XqGvvLu6tV9',
+        title: '고요한 삼나무 길 끝의 수도원'
       },
     ],
   },
