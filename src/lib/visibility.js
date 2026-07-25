@@ -14,3 +14,12 @@ export const showsTime = (view) => view?.showTime ?? view?.type !== 'announcemen
 
 /** 예식장 이름을 보여줄지 */
 export const showsVenue = (view) => view?.showVenue ?? view?.type !== 'announcement';
+
+/**
+ * D-DAY 를 시·분·초까지 보여줄지.
+ *
+ * 외부 알림용은 '며칠 남았다' 정도만 알리면 되고,
+ * 초 단위 카운트다운은 오시라는 신호로 읽힐 수 있어 남은 날짜만 보여준다.
+ */
+export const showsCountdownDetail = (view) =>
+  view?.showCountdownDetail ?? view?.type !== 'announcement';

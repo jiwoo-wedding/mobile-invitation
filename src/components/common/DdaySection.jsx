@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { CONFIG } from '../../config/invitationConfig';
 import { weddingDate, formatFullDate, formatTime } from '../../lib/format';
 import SectionTitle from './SectionTitle';
-import { showsTime } from '../../lib/visibility';
+import { showsTime, showsCountdownDetail } from '../../lib/visibility';
 
 /** 남은 시간을 {일, 시, 분, 초, 지남} 으로 계산 */
 function getRemaining(target) {
@@ -36,12 +36,17 @@ export default function DdaySection({ view }) {
   }, [CONFIG.wedding.date, CONFIG.wedding.time]);
 
   const { groom, bride } = CONFIG.couple;
-  const units = [
-    { label: 'DAYS', value: remaining.days },
-    { label: 'HOUR', value: remaining.hours },
-    { label: 'MIN', value: remaining.minutes },
-    { label: 'SEC', value: remaining.seconds },
-  ];
+  // 외부 알림용은 남은 날짜만, 내빈용은 시·분·초까지 보여준다
+  const detailed = showsCountdownDetail(view);
+
+  const units = detailed
+    ? [
+        { label: 'DAYS', value: remaining.days },
+        { label: 'HOUR', value: remaining.hours },
+        { label: 'MIN', value: remaining.minutes },
+        { label: 'SEC', value: remaining.seconds },
+      ]
+    : [{ label: 'DAYS', value: remaining.days }];
 
   return (
     <section className="px-5 py-6">
@@ -50,11 +55,13 @@ export default function DdaySection({ view }) {
         sub={showsTime(view) ? `${formatFullDate()} ${formatTime()}` : formatFullDate()}
       />
 
-      <div className="grid grid-cols-4 gap-2">
+      <div className={detailed ? 'grid grid-cols-4 gap-2' : 'flex justify-center'}>
         {units.map((unit) => (
           <div
             key={unit.label}
-            className="rounded-xl border border-line/30 bg-surface/40 py-4 text-center"
+            className={`rounded-xl border border-line/30 bg-surface/40 py-4 text-center ${
+              detailed ? '' : 'w-32'
+            }`}
           >
             <div className="font-batang text-2xl font-bold text-accent tabular-nums">
               {String(unit.value).padStart(2, '0')}
