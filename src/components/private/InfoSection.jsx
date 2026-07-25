@@ -11,7 +11,7 @@ export default function InfoSection() {
   ];
 
   return (
-    <section className="px-6 py-6">
+    <section className="px-5 py-6">
       <SectionTitle label="INFORMATION" sub="예식 안내" />
 
       <div className="space-y-3">

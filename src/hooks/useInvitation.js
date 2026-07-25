@@ -1,12 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { CONFIG, INVITATION_CONFIG } from '../config/invitationConfig';
 import { applyTheme } from '../config/themes';
 
 /**
  * URL 쿼리 파라미터를 읽어 초대장 종류와 테마를 결정한다.
  *
- *   (파라미터 없음)   → announcement (외부 알림용, 장소·계좌·RSVP 숨김)
- *   ?type=guest       → guest (내빈용, 전체 노출)
+ *   (파라미터 없음)    → announcement (외부 알림용, 장소·계좌·RSVP 숨김)
+ *   ?type=guest        → guest (내빈용, 전체 노출)
  *   ?theme=luxury-gold → 테마 미리보기 (CONFIG.allowThemePreview 가 true 일 때만)
  */
 export function useInvitation() {
@@ -28,5 +28,16 @@ export function useInvitation() {
     setState({ type, view: INVITATION_CONFIG[type], themeId: applied.id });
   }, []);
 
-  return state;
+  /** 테마를 즉시 갈아입히고 주소창에도 반영한다 (새로고침 없음) */
+  const setTheme = useCallback((themeId) => {
+    const applied = applyTheme(themeId);
+
+    const url = new URL(window.location.href);
+    url.searchParams.set('theme', applied.id);
+    window.history.replaceState({}, '', url);
+
+    setState((prev) => ({ ...prev, themeId: applied.id }));
+  }, []);
+
+  return { ...state, setTheme };
 }

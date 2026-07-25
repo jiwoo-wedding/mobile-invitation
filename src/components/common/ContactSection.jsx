@@ -1,98 +1,91 @@
-import React, { useState } from 'react';
-import { Phone, MessageSquare, X } from 'lucide-react';
+import React from 'react';
+import { Phone, MessageSquare } from 'lucide-react';
 import { CONFIG } from '../../config/invitationConfig';
-import { withDeceased } from '../../lib/format';
+import SectionTitle from './SectionTitle';
 
-/** 연락처 목록을 만든다. 고인으로 표시된 분은 목록에서 제외한다. */
-function buildContacts() {
+/**
+ * 연락처 — 신랑측 / 신부측을 좌우 두 칸으로 나눈다.
+ *
+ * 두 칸을 구분하는 방법으로 색을 새로 만들지 않고,
+ * 같은 악센트 색의 "채움 / 테두리" 짝으로 대비를 준다.
+ * 이렇게 하면 13개 테마 어디서든 의도한 대비가 그대로 유지된다.
+ */
+export default function ContactSection() {
   const { groom, bride } = CONFIG.couple;
 
-  const side = (person, sideLabel, childLabel) =>
+  /** 고인으로 표시된 분과 번호가 없는 분은 목록에서 제외한다 */
+  const people = (person, selfRole) =>
     [
-      { group: sideLabel, role: childLabel, name: person.name, tel: person.tel },
-      !person.fatherDeceased && {
-        group: sideLabel,
-        role: '아버지',
-        name: withDeceased(person.father, false),
-        tel: person.fatherTel,
-      },
-      !person.motherDeceased && {
-        group: sideLabel,
-        role: '어머니',
-        name: person.mother,
-        tel: person.motherTel,
-      },
-    ].filter(Boolean);
+      { role: selfRole, name: person.name, tel: person.tel },
+      !person.fatherDeceased && { role: '아버지', name: person.father, tel: person.fatherTel },
+      !person.motherDeceased && { role: '어머니', name: person.mother, tel: person.motherTel },
+    ].filter((p) => p && p.tel);
 
-  return [...side(groom, '신랑측', '신랑'), ...side(bride, '신부측', '신부')].filter((c) => c.tel);
-}
-
-export default function ContactSection() {
-  const [open, setOpen] = useState(false);
-  const contacts = buildContacts();
+  const sides = [
+    {
+      key: 'groom',
+      label: '신랑측',
+      // 채운 쪽
+      card: 'border-accent/45 bg-accent/10',
+      badge: 'bg-accent text-accent-fg',
+      list: people(groom, '신랑'),
+    },
+    {
+      key: 'bride',
+      label: '신부측',
+      // 비운 쪽
+      card: 'border-line/25 bg-surface/60',
+      badge: 'border border-accent/60 text-accent',
+      list: people(bride, '신부'),
+    },
+  ];
 
   return (
-    <section className="px-6 py-4 text-center">
-      <button
-        onClick={() => setOpen(true)}
-        className="flex w-full items-center justify-center gap-2 rounded-xl bg-accent py-4 font-bold text-accent-fg shadow"
-      >
-        <Phone size={18} /> 연락하기
-      </button>
+    <section className="px-5 py-6">
+      <SectionTitle label="CONTACT" sub="연락처" />
 
-      {open && (
-        <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/60"
-          role="dialog"
-          aria-modal="true"
-          aria-label="연락처"
-          onClick={() => setOpen(false)}
-        >
-          <div
-            className="w-full max-w-mobile space-y-3 rounded-t-3xl border-t border-line/30 bg-bg p-6 pb-8"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between">
-              <h3 className="font-batang text-lg font-bold text-accent">연락처</h3>
-              <button onClick={() => setOpen(false)} aria-label="닫기" className="text-muted">
-                <X size={20} />
-              </button>
-            </div>
+      <div className="grid grid-cols-2 gap-3">
+        {sides.map((side) => (
+          <div key={side.key} className={`rounded-2xl border p-3 ${side.card}`}>
+            <p
+              className={`mb-3 rounded-lg py-2 text-center text-[11px] font-bold tracking-[0.2em] ${side.badge}`}
+            >
+              {side.label}
+            </p>
 
-            <ul className="space-y-2 text-left">
-              {contacts.map((c) => (
+            <ul className="space-y-2">
+              {side.list.map((person) => (
                 <li
-                  key={`${c.group}-${c.role}`}
-                  className="flex items-center justify-between rounded-lg bg-surface/50 p-3"
+                  key={`${side.key}-${person.role}`}
+                  className="rounded-xl bg-bg/50 px-2 py-2.5 text-center"
                 >
-                  <div className="text-sm">
-                    <p className="text-xs text-muted">
-                      {c.group} {c.role}
-                    </p>
-                    <p className="font-bold">{c.name}</p>
-                  </div>
-                  <div className="flex gap-2">
+                  <p className="text-[10px] tracking-wide text-muted">{person.role}</p>
+                  <p className="mt-0.5 font-batang text-sm font-bold leading-tight">
+                    {person.name}
+                  </p>
+
+                  <div className="mt-2 flex gap-1.5">
                     <a
-                      href={`tel:${c.tel}`}
-                      aria-label={`${c.name}에게 전화하기`}
-                      className="rounded-lg bg-accent p-2 text-accent-fg"
+                      href={`tel:${person.tel}`}
+                      aria-label={`${person.name}에게 전화하기`}
+                      className="flex flex-1 items-center justify-center gap-1 rounded-md bg-accent py-1.5 text-[10px] font-bold text-accent-fg transition-transform active:scale-95"
                     >
-                      <Phone size={16} />
+                      <Phone size={11} /> 전화
                     </a>
                     <a
-                      href={`sms:${c.tel}`}
-                      aria-label={`${c.name}에게 문자 보내기`}
-                      className="rounded-lg border border-line/40 p-2 text-accent"
+                      href={`sms:${person.tel}`}
+                      aria-label={`${person.name}에게 문자 보내기`}
+                      className="flex flex-1 items-center justify-center gap-1 rounded-md border border-accent/50 py-1.5 text-[10px] font-bold text-accent transition-transform active:scale-95"
                     >
-                      <MessageSquare size={16} />
+                      <MessageSquare size={11} /> 문자
                     </a>
                   </div>
                 </li>
               ))}
             </ul>
           </div>
-        </div>
-      )}
+        ))}
+      </div>
     </section>
   );
 }

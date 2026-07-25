@@ -52,7 +52,7 @@ export default function GuestbookSection() {
   };
 
   return (
-    <section className="px-6 py-6">
+    <section className="px-5 py-6">
       <SectionTitle label="GUESTBOOK" sub="따뜻한 축하 한마디를 남겨주세요" />
 
       <div className="space-y-2 rounded-2xl border border-line/30 bg-surface/40 p-4">

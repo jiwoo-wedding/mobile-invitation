@@ -30,24 +30,25 @@ npm run dev
 
 ```
 mobile-invitation/
-├─ public/images/          # 사진 (숫자 파일명, README 참고)
-│  ├─ hero/1.jpg
-│  ├─ story/1.jpg ...
-│  ├─ gallery/1.jpg ...
-│  ├─ location/1.jpg       # 약도 — 내빈용에만 사용
-│  └─ og/1.jpg             # 카카오톡 공유 썸네일
+├─ public/og.jpg           # 카카오톡 공유 썸네일 (여기만 고정 경로)
 │
 ├─ src/
+│  ├─ assets/              # 사진 — 파일명 자유, 폴더에 넣으면 자동 인식
+│  │  ├─ gallery/
+│  │  ├─ story/
+│  │  └─ location/
+│
 │  ├─ components/
 │  │  ├─ common/           # 두 링크 모두에 노출
 │  │  │  ├─ CurtainCover.jsx      # 초대장 열기 화면
-│  │  │  ├─ HeroSection.jsx
+│  │  │  ├─ IntroSection.jsx      # 첫 화면 (대표 사진은 mainPhoto 로 지정)
 │  │  │  ├─ GreetingSection.jsx   # 인사말 (링크 종류별 문구 자동 변경)
 │  │  │  ├─ DdaySection.jsx       # D-day 카운트다운
 │  │  │  ├─ StorySection.jsx
 │  │  │  ├─ GallerySection.jsx    # 갤러리 + 확대 보기
 │  │  │  ├─ ContactSection.jsx    # 연락처 모달
 │  │  │  ├─ GuestbookSection.jsx  # 방명록 (Supabase)
+│  │  │  ├─ ThemeSwitcher.jsx     # 테마 고르는 도구 (미리보기용)
 │  │  │  ├─ SectionTitle.jsx
 │  │  │  ├─ SectionDivider.jsx
 │  │  │  └─ Footer.jsx            # 링크 종류별 공유 링크 복사
@@ -75,7 +76,7 @@ mobile-invitation/
 │  ├─ App.jsx
 │  └─ main.jsx
 │
-├─ supabase/migrations/20251025_init.sql
+├─ supabase/migrations/20261219_init.sql
 └─ .github/workflows/deploy.yml
 ```
 
@@ -120,8 +121,14 @@ theme: 'midnight-navy',
 | `pastel-dream` | 캔디 파스텔 |
 | `korean-traditional` | 한지 · 단청 |
 
-고르는 동안에는 주소 뒤에 `?theme=luxury-gold` 를 붙여 바로 비교할 수 있습니다.
-(`allowThemePreview: true` 일 때만 동작하며, 테마를 정한 뒤에는 `false` 로 바꾸세요.)
+고르는 방법은 두 가지입니다.
+
+1. 화면 우측 하단의 **팔레트 버튼**을 눌러 13개를 즉시 갈아입혀 봅니다.
+   고른 테마가 주소창에도 반영되니, 그 주소를 그대로 공유하면 상대방도 같은 테마로 봅니다.
+2. 주소 뒤에 `?theme=luxury-gold` 처럼 직접 붙입니다.
+
+둘 다 `allowThemePreview: true` 일 때만 동작합니다.
+테마를 정했으면 `theme` 값에 적고 `allowThemePreview` 를 `false` 로 바꾸세요. 버튼이 사라집니다.
 
 테마는 **색상 토큰만** 정의합니다. 레이아웃(최대 480px 중앙 정렬)과
 폰트(제목 Gowun Batang / 본문 Noto Sans KR)는 모든 테마가 공유하므로,
@@ -134,7 +141,7 @@ theme: 'midnight-navy',
 연결하지 않으면 방명록 · 참석 여부 섹션이 **자동으로 숨겨집니다.** 나머지는 그대로 동작합니다.
 
 1. [supabase.com](https://supabase.com)에서 프로젝트를 만듭니다.
-2. SQL Editor 에 `supabase/migrations/20251025_init.sql` 을 붙여넣고 실행합니다.
+2. SQL Editor 에 `supabase/migrations/20261219_init.sql` 을 붙여넣고 실행합니다.
 3. Settings → API 에서 Project URL 과 anon key 를 복사해 `.env.local` 에 넣습니다.
 4. GitHub Actions 로 배포한다면 같은 값을 레포지토리
    Settings → Secrets and variables → Actions 에도 등록합니다.

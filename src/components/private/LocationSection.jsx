@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Copy, Check } from 'lucide-react';
 import { CONFIG } from '../../config/invitationConfig';
-import { asset } from '../../lib/assets';
+import { locationImage } from '../../lib/assets';
 import SectionTitle from '../common/SectionTitle';
 
 /** 🔒 내빈용 전용 — 오시는 길 */
@@ -16,17 +16,19 @@ export default function LocationSection() {
   };
 
   return (
-    <section className="space-y-4 px-6 py-6">
+    <section className="space-y-4 px-5 py-6">
       <SectionTitle label="LOCATION" sub="오시는 길" />
 
-      <div className="h-64 w-full overflow-hidden rounded-2xl border border-line/30 bg-surface/50">
-        <img
-          src={asset('images/location/1.jpg')}
-          alt="예식장 약도"
-          loading="lazy"
-          className="h-full w-full object-cover"
-        />
-      </div>
+      {locationImage && (
+        <div className="h-64 w-full overflow-hidden rounded-2xl border border-line/30 bg-surface/50">
+          <img
+            src={locationImage}
+            alt="예식장 약도"
+            loading="lazy"
+            className="h-full w-full object-cover"
+          />
+        </div>
+      )}
 
       <div className="space-y-2 pt-2 text-center">
         <p className="text-lg font-bold">

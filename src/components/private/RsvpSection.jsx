@@ -45,7 +45,7 @@ export default function RsvpSection() {
 
   if (status === 'done') {
     return (
-      <section className="px-6 py-6">
+      <section className="px-5 py-6">
         <SectionTitle label="R.S.V.P" sub="참석 여부" />
         <div className="rounded-2xl border border-line/30 bg-surface/40 p-8 text-center">
           <p className="font-batang text-lg font-bold text-accent">전달했습니다</p>
@@ -69,7 +69,7 @@ export default function RsvpSection() {
   }
 
   return (
-    <section className="px-6 py-6">
+    <section className="px-5 py-6">
       <SectionTitle label="R.S.V.P" sub="참석 여부를 알려주세요" />
 
       <p className="mb-4 text-center text-xs leading-6 text-muted">

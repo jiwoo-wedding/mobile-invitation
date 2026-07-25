@@ -1,6 +1,6 @@
 import React from 'react';
 // 내빈용 페이지 — 전체 섹션 렌더링 (장소 · 예식장 안내 · 계좌 · RSVP 포함)
-import HeroSection from '../components/common/HeroSection';
+import IntroSection from '../components/common/IntroSection';
 import GreetingSection from '../components/common/GreetingSection';
 import DdaySection from '../components/common/DdaySection';
 import StorySection from '../components/common/StorySection';
@@ -8,6 +8,7 @@ import GallerySection from '../components/common/GallerySection';
 import ContactSection from '../components/common/ContactSection';
 import GuestbookSection from '../components/common/GuestbookSection';
 import SectionDivider from '../components/common/SectionDivider';
+import Reveal from '../components/common/Reveal';
 import Footer from '../components/common/Footer';
 import LocationSection from '../components/private/LocationSection';
 import InfoSection from '../components/private/InfoSection';
@@ -17,49 +18,77 @@ import RsvpSection from '../components/private/RsvpSection';
 export default function GuestPage({ view }) {
   return (
     <>
-      <HeroSection />
+      <IntroSection />
+
       <SectionDivider />
-      <GreetingSection view={view} />
+      <Reveal>
+        <GreetingSection view={view} />
+      </Reveal>
+
       <SectionDivider />
-      <DdaySection />
+      <Reveal>
+        <DdaySection />
+      </Reveal>
+
       <SectionDivider />
-      <StorySection />
+      <Reveal>
+        <StorySection />
+      </Reveal>
+
       <SectionDivider />
-      <GallerySection />
+      <Reveal>
+        <GallerySection />
+      </Reveal>
 
       {view.showLocation && (
         <>
           <SectionDivider />
-          <LocationSection />
+          <Reveal>
+            <LocationSection />
+          </Reveal>
         </>
       )}
 
       {view.showInfo && (
         <>
           <SectionDivider />
-          <InfoSection />
+          <Reveal>
+            <InfoSection />
+          </Reveal>
         </>
       )}
 
       {view.showRsvp && (
         <>
           <SectionDivider />
-          <RsvpSection />
+          <Reveal>
+            <RsvpSection />
+          </Reveal>
         </>
       )}
 
       {view.showAccount && (
         <>
           <SectionDivider />
-          <AccountSection />
+          <Reveal>
+            <AccountSection />
+          </Reveal>
         </>
       )}
 
       <SectionDivider />
-      <ContactSection />
+      <Reveal>
+        <ContactSection />
+      </Reveal>
+
       <SectionDivider />
-      <GuestbookSection />
-      <Footer type={view.type} />
+      <Reveal>
+        <GuestbookSection />
+      </Reveal>
+
+      <Reveal>
+        <Footer type={view.type} />
+      </Reveal>
     </>
   );
 }

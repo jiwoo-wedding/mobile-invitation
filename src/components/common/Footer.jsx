@@ -26,7 +26,7 @@ export default function Footer({ type }) {
   const { groom, bride } = CONFIG.couple;
 
   return (
-    <footer className="space-y-4 bg-surface/50 px-6 py-10 text-center">
+    <footer className="space-y-4 bg-surface/50 px-5 py-10 text-center">
       <p className="font-batang text-sm text-accent">
         {groom.name} &amp; {bride.name}
       </p>

@@ -43,7 +43,7 @@ export default function DdaySection() {
   ];
 
   return (
-    <section className="px-6 py-6">
+    <section className="px-5 py-6">
       <SectionTitle label="D-DAY" sub={`${formatFullDate()} ${formatTime()}`} />
 
       <div className="grid grid-cols-4 gap-2">

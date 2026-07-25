@@ -24,10 +24,10 @@ export const CONFIG = {
   // ── 3. 신랑 · 신부 ──────────────────────────────
   couple: {
     groom: {
-      name: '신랑이름',
+      name: '장성빈',
       order: '장남', // 장남 / 차남 / 아들 ...
-      father: '신랑아버지',
-      mother: '신랑어머니',
+      father: '장재필',
+      mother: '최미순',
       fatherDeceased: false, // true 면 이름 앞에 故 가 붙습니다
       motherDeceased: false,
       tel: '010-0000-0000',
@@ -35,10 +35,10 @@ export const CONFIG = {
       motherTel: '010-0000-0000',
     },
     bride: {
-      name: '신부이름',
+      name: '엄지우',
       order: '장녀',
-      father: '신부아버지',
-      mother: '신부어머니',
+      father: '엄길용',
+      mother: '조영순',
       fatherDeceased: false,
       motherDeceased: false,
       tel: '010-0000-0000',
@@ -49,7 +49,7 @@ export const CONFIG = {
 
   // ── 4. 예식 정보 ────────────────────────────────
   wedding: {
-    date: '2025-10-25', // YYYY-MM-DD
+    date: '2026-12-19', // YYYY-MM-DD
     time: '13:00', // 24시간 형식
     venue: 'OO웨딩홀',
     hall: '3층 단독홀',
@@ -69,37 +69,56 @@ export const CONFIG = {
   },
 
   // ── 5. 사진 ─────────────────────────────────────
-  // 파일은 public/images/ 아래에 1.jpg, 2.jpg ... 순서대로 넣으세요.
-  photos: {
-    hero: 1, // public/images/hero/1.jpg
-    story: 2, // public/images/story/1.jpg ~
-    gallery: 9, // public/images/gallery/1.jpg ~
-    location: 1, // public/images/location/1.jpg (약도)
+  // 파일은 src/assets/ 아래 폴더에 넣기만 하면 자동으로 인식됩니다.
+  //   src/assets/gallery/   갤러리 사진 (몇 장이든 자유, 파일명도 자유)
+  //   src/assets/story/     우리 이야기 사진
+  //   src/assets/location/  약도 1장
+  // 카카오톡 썸네일만 예외로 public/og.jpg 에 둡니다.
+  gallery: {
+    initialCount: 12, // 처음에 보여줄 장수. 나머지는 '더 보기'로 펼칩니다.
   },
 
+  // 첫 화면에 쓸 대표 사진.
+  // src/assets/gallery 안의 파일명을 그대로 적습니다. 세로 사진이 잘 어울립니다.
+  // 이름이 안 맞으면 갤러리 첫 장이 대신 쓰이고, 개발 중에는 콘솔에 경고가 찍힙니다.
+  mainPhoto: 'trapi12.jpg',
+
+  // 대표 사진에서 화면에 보여줄 부분. 'X% Y%' 형식, 기본 가운데는 '50% 50%'.
+  //   X 를 키우면 사진이 왼쪽으로, 줄이면 오른쪽으로 움직입니다.
+  //   Y 를 키우면 위로, 줄이면 아래로 움직입니다.
+  // 5 단위로 바꿔가며 맞추는 게 편합니다.
+  mainPhotoPosition: '53% 50%',
+
   // ── 6. 우리의 이야기 ────────────────────────────
+  // 사진을 넣고 싶으면 src/assets/story/ 에 순서대로 넣으세요. (없으면 글만 나옵니다)
   story: [
-    { title: '처음 만난 날', text: '2019년 봄,\n같은 동아리에서 처음 마주쳤습니다.' },
-    { title: '함께한 시간', text: '여섯 번의 계절을 지나\n서로의 하루가 되었습니다.' },
+    {
+      title: '처음 만난 날',
+      text: `2025년 봄,\n서로를 처음 마주했습니다.\n\n특별할 것 없던 하루였는데\n그날 이후로 계절이\n조금 다르게 흘렀습니다.`,
+    },
+    {
+      title: '함께한 시간',
+      text: `일곱 번의 계절을 지나며\n평범한 하루가 서로에게\n가장 소중한 하루가 되었습니다.\n\n이제 같은 방향을 보며\n오래 걸어가려 합니다.`,
+    },
   ],
 
   // ── 7. 마음 전하실 곳 (계좌) — 내빈용에만 노출 ──
   accounts: {
     groom: [
-      { role: '신랑', bank: 'OO은행', number: '110-123-456789', holder: '신랑이름' },
-      { role: '아버지', bank: 'OO은행', number: '110-123-456789', holder: '신랑아버지' },
+      { role: '신랑', bank: 'OO은행', number: '110-123-456789', holder: '장성빈' },
+      { role: '아버지', bank: 'OO은행', number: '110-123-456789', holder: '장재필' },
     ],
     bride: [
-      { role: '신부', bank: 'OO은행', number: '3333-01-1234567', holder: '신부이름' },
-      { role: '어머니', bank: 'OO은행', number: '3333-01-1234567', holder: '신부어머니' },
+      { role: '신부', bank: 'OO은행', number: '3333-01-1234567', holder: '엄지우' },
+      { role: '어머니', bank: 'OO은행', number: '3333-01-1234567', holder: '조영순' },
     ],
   },
 
   // ── 8. 공유 문구 ────────────────────────────────
   // ⚠️ 카카오톡 미리보기(제목/설명/썸네일)는 이 값이 아니라 index.html 의 og 태그를 고쳐야 합니다.
   share: {
-    title: '신랑이름 ♥ 신부이름 결혼합니다',
-    description: '2025년 10월 25일 토요일 오후 1시',
+    title: '장성빈 ♥ 엄지우 결혼합니다',
+    description: '2026년 12월 19일 토요일 오후 1시',
   },
 };
 

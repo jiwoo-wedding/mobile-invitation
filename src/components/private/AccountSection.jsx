@@ -20,7 +20,7 @@ export default function AccountSection() {
   ];
 
   return (
-    <section className="space-y-4 px-6 py-6">
+    <section className="space-y-4 px-5 py-6">
       <SectionTitle label="ACCOUNT" sub="마음 전하실 곳" />
 
       <p className="text-center text-xs leading-6 text-muted">

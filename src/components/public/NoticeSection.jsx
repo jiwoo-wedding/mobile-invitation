@@ -4,7 +4,7 @@ import { Heart } from 'lucide-react';
 /** 📢 외부 알림용 전용 — 소규모 예식 안내 */
 export default function NoticeSection() {
   return (
-    <section className="px-6 py-6 text-center">
+    <section className="px-5 py-6 text-center">
       <div className="space-y-3 rounded-2xl border border-line/30 bg-surface/40 p-6">
         <Heart className="mx-auto text-accent" size={24} />
         <h3 className="font-batang text-lg font-bold text-accent">안내 말씀</h3>

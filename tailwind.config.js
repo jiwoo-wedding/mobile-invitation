@@ -19,7 +19,7 @@ export default {
         batang: ['"Gowun Batang"', 'serif'],
         sans: ['"Noto Sans KR"', 'sans-serif'],
       },
-      maxWidth: { mobile: '480px' },
+      maxWidth: { mobile: 'var(--container-max)' },
     },
   },
   plugins: [],

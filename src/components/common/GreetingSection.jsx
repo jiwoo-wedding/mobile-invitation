@@ -17,7 +17,7 @@ export default function GreetingSection({ view }) {
   );
 
   return (
-    <section className="px-6 py-8 text-center font-batang">
+    <section className="px-5 py-8 text-center font-batang">
       <div className="space-y-6 rounded-2xl border border-line/30 bg-surface/40 p-8 backdrop-blur-sm">
         <div className="text-xs tracking-[0.3em] text-accent">{view.greetingTitle}</div>
 
