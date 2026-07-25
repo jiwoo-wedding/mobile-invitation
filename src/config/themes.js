@@ -25,7 +25,7 @@ export const THEMES = {
     pattern: 'dots',
     colors: {
       page: '#1a1c14',
-      bg: '#474a37',
+      bg: '#5b5f47',
       surface: '#2f3327',
       accent: '#d8e592',
       accentFg: '#474a37',

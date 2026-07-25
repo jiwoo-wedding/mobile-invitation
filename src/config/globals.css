@@ -70,7 +70,7 @@ body {
 [data-pattern='dots'] .mobile-container,
 [data-pattern='dots'] .cover-screen {
   background-image: radial-gradient(
-    rgb(var(--c-accent-rgb) / 0.45) 0.75px,
+    rgb(var(--c-accent-rgb) / 0.2) 0.75px,
     transparent 0.75px
   );
   background-size: 16px 16px;

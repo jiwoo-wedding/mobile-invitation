@@ -25,7 +25,7 @@ export const CONFIG = {
   couple: {
     groom: {
       name: '장성빈',
-      order: '장남', 
+      order: '첫째 아들', 
       father: '장재필',
       mother: '최미순',
       fatherDeceased: false, 
@@ -36,7 +36,7 @@ export const CONFIG = {
     },
     bride: {
       name: '엄지우',
-      order: '차녀',
+      order: '둘째 딸',
       father: '엄길용',
       mother: '조영순',
       fatherDeceased: false,
