@@ -30,6 +30,10 @@
   --c-border-rgb: 216 229 146;
 }
 
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   margin: 0;
   padding: 0;
