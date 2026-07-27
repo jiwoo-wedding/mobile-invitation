@@ -30,22 +30,14 @@
   --c-border-rgb: 216 229 146;
 }
 
-html {
-  /*
-    스크롤바 자리를 늘 확보한다.
-    scrollbar-gutter 는 구형 브라우저에서 무시되므로 overflow-y: scroll 을 함께 둔다.
-    내용이 짧아도 스크롤바가 항상 보이지만, 대신 폭이 절대 변하지 않는다.
-  */
-  scrollbar-gutter: stable;
-  overflow-y: scroll;
-}
-
 body {
   margin: 0;
   padding: 0;
   background-color: var(--c-page);
   font-family: 'Noto Sans KR', sans-serif;
   color: var(--c-text);
+  display: flex;
+  justify-content: center;
   min-height: 100vh;
   transition: background-color 0.4s ease;
 
@@ -59,15 +51,10 @@ body {
   scrollbar-gutter: stable;
 }
 
-#root {
-  width: 100%;
-}
-
 /* 모바일 청첩장 본체: 최대 480px, 항상 중앙 정렬 */
 .mobile-container {
   width: 100%;
   max-width: var(--container-max);
-  margin: 0 auto;        /* ← 가운데 정렬 */
   min-height: 100vh;
   background-color: var(--c-bg);
   box-shadow: 0 0 30px rgb(0 0 0 / 0.5);
@@ -309,6 +296,15 @@ body {
   to {
     opacity: 1;
   }
+}
+
+/* 확대 보기처럼 직접 끌어서 움직이는 곳은 스크롤바를 감춘다 */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* 키보드 포커스는 항상 보이게 */

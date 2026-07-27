@@ -25,6 +25,7 @@ export default function GallerySection() {
   const pinchRef = useRef(null);   // 두 손가락 확대 시작 정보
   const scrollRef = useRef(null);
   const lightboxRef = useRef(null);
+  const dragRef = useRef(null);   // 확대 후 마우스로 끌어 옮길 때의 시작 지점
 
   // 터치 처리는 네이티브 리스너로 붙이므로, 최신 zoom 값을 ref 로 따로 들고 있는다
   const zoomRef = useRef(1);
@@ -136,6 +137,37 @@ export default function GallerySection() {
     };
   }, [index, images.length]);
 
+  /*
+    확대한 뒤 사진을 끌어서 움직인다. (마우스 전용)
+
+    확대 중에는 바깥 div 가 스크롤 컨테이너가 되므로,
+    마우스를 누른 채 움직인 거리만큼 그 스크롤 위치를 반대로 밀어 준다.
+    손가락은 브라우저 기본 스크롤이 더 부드러워서 그대로 둔다.
+  */
+  const onDragStart = (e) => {
+    if (zoom === 1 || e.button !== 0) return;
+
+    e.preventDefault(); // 사진이 브라우저 기본 드래그로 끌려가지 않도록
+
+    dragRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      left: scrollRef.current?.scrollLeft ?? 0,
+      top: scrollRef.current?.scrollTop ?? 0,
+    };
+  };
+
+  const onDragMove = (e) => {
+    if (!dragRef.current || !scrollRef.current) return;
+
+    scrollRef.current.scrollLeft = dragRef.current.left - (e.clientX - dragRef.current.x);
+    scrollRef.current.scrollTop = dragRef.current.top - (e.clientY - dragRef.current.y);
+  };
+
+  const onDragEnd = () => {
+    dragRef.current = null;
+  };
+
   if (images.length === 0) {
     return (
       <section className="px-5 py-6">
@@ -198,10 +230,14 @@ export default function GallerySection() {
           ref={scrollRef}
           onWheel={onWheel}
           onClick={() => zoom === 1 && close()}
+          onMouseDown={onDragStart}
+          onMouseMove={onDragMove}
+          onMouseUp={onDragEnd}
+          onMouseLeave={onDragEnd}
           className={
             zoom === 1
               ? 'absolute inset-0 flex items-center justify-center overflow-hidden p-4'
-              : 'absolute inset-0 overflow-auto overscroll-contain p-4'
+              : 'scrollbar-hide absolute inset-0 cursor-grab select-none overflow-auto overscroll-contain p-4 active:cursor-grabbing'
           }
         >
           <img
@@ -213,7 +249,7 @@ export default function GallerySection() {
             className={
               zoom === 1
                 ? 'lightbox-image max-h-full max-w-full rounded-lg object-contain shadow-[0_28px_70px_rgba(0,0,0,0.7)] ring-1 ring-white/20'
-                : 'block max-w-none cursor-move rounded-lg ring-1 ring-white/20'
+                : 'block max-w-none rounded-lg ring-1 ring-white/20'
             }
             style={zoom === 1 ? undefined : { width: `${zoom * 100}%` }}
           />
