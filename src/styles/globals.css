@@ -65,6 +65,7 @@ body {
 .mobile-container {
   width: 100%;
   max-width: var(--container-max);
+  margin: 0 auto;        /* ← 가운데 정렬 */
   min-height: 100vh;
   background-color: var(--c-bg);
   box-shadow: 0 0 30px rgb(0 0 0 / 0.5);
