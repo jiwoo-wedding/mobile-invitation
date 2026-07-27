@@ -46,8 +46,6 @@ body {
   background-color: var(--c-page);
   font-family: 'Noto Sans KR', sans-serif;
   color: var(--c-text);
-  display: flex;
-  justify-content: center;
   min-height: 100vh;
   transition: background-color 0.4s ease;
 
