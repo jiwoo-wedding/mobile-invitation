@@ -12,12 +12,12 @@ export default function IntroSection({ view }) {
   const { groom, bride } = CONFIG.couple;
 
   return (
-    <section className="relative flex h-[100svh] w-full flex-col items-center justify-between overflow-hidden text-center">
+    <section className="relative flex aspect-[3/4] max-h-[100svh] min-h-[520px] w-full flex-col items-center justify-between overflow-hidden text-center">
       {mainImage && (
         <img
           src={mainImage}
           alt="신랑 신부 대표 사진"
-          className="absolute inset-0 z-0 h-full w-full object-cover"
+          className="animate-ken-burns absolute inset-0 z-0 h-full w-full object-cover"
           style={{ objectPosition: CONFIG.mainPhotoPosition ?? '50% 50%' }}
         />
       )}
