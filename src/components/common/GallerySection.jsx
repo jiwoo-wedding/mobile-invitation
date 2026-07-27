@@ -6,7 +6,7 @@ import { CONFIG } from '../../config/invitationConfig';
 import SectionTitle from './SectionTitle';
 import { useInView } from '../../hooks/useInView';
 
-const MAX_ZOOM = 2;
+const MAX_ZOOM = 2.5;
 const ZOOM_STEP = 0.1;
 
 export default function GallerySection() {
@@ -21,6 +21,11 @@ export default function GallerySection() {
 
   const [index, setIndex] = useState(null); // null 이면 확대 보기 닫힘
   const [zoom, setZoom] = useState(1);
+
+  // 배율 100% = '화면에 꽉 차게 맞춘 크기' 가 되도록,
+  // 사진의 원본 픽셀 크기와 보기 영역 크기를 재어 둔다.
+  const [natural, setNatural] = useState(null); // { w, h } 사진 원본 픽셀
+  const [viewport, setViewport] = useState({ w: 0, h: 0 }); // 여백을 뺀 보기 영역
   const touchRef = useRef(null);   // 한 손가락 스와이프 시작 x 좌표
   const pinchRef = useRef(null);   // 두 손가락 확대 시작 정보
   const scrollRef = useRef(null);
@@ -43,7 +48,29 @@ export default function GallerySection() {
   // 사진을 바꾸면 확대 배율과 스크롤 위치를 초기화한다
   useEffect(() => {
     setZoom(1);
+    setNatural(null);
     if (scrollRef.current) scrollRef.current.scrollTo(0, 0);
+  }, [index]);
+
+  // 보기 영역 크기를 재고, 창 크기나 화면 회전에 맞춰 갱신한다
+  useEffect(() => {
+    if (index === null) return;
+
+    const measure = () => {
+      const el = scrollRef.current;
+      if (!el) return;
+      // p-4 여백(좌우/상하 각 16px)을 뺀 실제 사진 자리
+      setViewport({ w: el.clientWidth - 32, h: el.clientHeight - 32 });
+    };
+
+    measure();
+    window.addEventListener('resize', measure);
+    window.addEventListener('orientationchange', measure);
+
+    return () => {
+      window.removeEventListener('resize', measure);
+      window.removeEventListener('orientationchange', measure);
+    };
   }, [index]);
 
   // 확대 보기가 열려 있는 동안 배경 스크롤을 막고 키보드 조작을 지원한다
@@ -124,12 +151,44 @@ export default function GallerySection() {
       touchRef.current = null;
     };
 
+    /*
+      iOS Safari 전용 처리.
+      Safari 는 접근성을 이유로 user-scalable=no 를 무시하고 자체 핀치를 우선한다.
+      그래서 두 손가락 제스처가 touchmove 까지 오지 않고 페이지 전체가 확대돼 버린다.
+      gesture* 이벤트는 iOS Safari 에서만 발생하므로, 확대 보기가 열려 있는 동안
+      이것을 막아 우리 코드가 배율을 직접 다루도록 한다.
+
+      e.scale 은 Safari 가 계산해 주는 '처음 대비 몇 배' 값이라
+      손가락 사이 거리를 직접 잴 필요가 없다.
+    */
+    const gestureStartZoom = { value: 1 };
+
+    const onGestureStart = (e) => {
+      e.preventDefault();
+      gestureStartZoom.value = zoomRef.current;
+    };
+
+    const onGestureChange = (e) => {
+      e.preventDefault();
+      const next = gestureStartZoom.value * e.scale;
+      setZoom(Math.min(MAX_ZOOM, Math.max(1, next < 1.05 ? 1 : next)));
+    };
+
+    const onGestureEnd = (e) => e.preventDefault();
+
+    el.addEventListener('gesturestart', onGestureStart, { passive: false });
+    el.addEventListener('gesturechange', onGestureChange, { passive: false });
+    el.addEventListener('gestureend', onGestureEnd, { passive: false });
+
     el.addEventListener('touchstart', onTouchStart, { passive: true });
     el.addEventListener('touchmove', onTouchMove, { passive: false });
     el.addEventListener('touchend', onTouchEnd, { passive: true });
     el.addEventListener('touchcancel', onTouchEnd, { passive: true });
 
     return () => {
+      el.removeEventListener('gesturestart', onGestureStart);
+      el.removeEventListener('gesturechange', onGestureChange);
+      el.removeEventListener('gestureend', onGestureEnd);
       el.removeEventListener('touchstart', onTouchStart);
       el.removeEventListener('touchmove', onTouchMove);
       el.removeEventListener('touchend', onTouchEnd);
@@ -201,6 +260,27 @@ export default function GallerySection() {
 
   const currentGroup = index === null ? null : groupOfIndex(index);
 
+  /*
+    배율 100% 일 때의 크기를 먼저 구한다.
+
+    예전에는 확대할 때 '컨테이너 폭의 zoom%' 로 잡았는데,
+    세로 사진은 화면에 맞춘 폭이 컨테이너의 절반도 안 되기 때문에
+    110% 로 올리는 순간 실제로는 세 배 가까이 커져 버렸다.
+    원본 픽셀 크기와 보기 영역을 비교해 '맞춘 크기'를 구하고,
+    거기에 배율을 곱하면 110% 가 눈에 보이는 그대로 110% 가 된다.
+  */
+  const fitScale =
+    natural && viewport.w > 0 && viewport.h > 0
+      ? Math.min(viewport.w / natural.w, viewport.h / natural.h)
+      : null;
+
+  const displaySize = fitScale
+    ? {
+        width: Math.round(natural.w * fitScale * zoom),
+        height: Math.round(natural.h * fitScale * zoom),
+      }
+    : undefined;
+
   /**
    * 확대 보기를 document.body 로 빼낸다.
    * Reveal 컴포넌트가 transform 을 쓰기 때문에, 그 안에서 position:fixed 를
@@ -236,22 +316,36 @@ export default function GallerySection() {
           onMouseLeave={onDragEnd}
           className={
             zoom === 1
-              ? 'absolute inset-0 flex items-center justify-center overflow-hidden p-4'
-              : 'scrollbar-hide absolute inset-0 cursor-grab select-none overflow-auto overscroll-contain p-4 active:cursor-grabbing'
+              ? 'absolute inset-0 grid place-items-center overflow-hidden p-4'
+              : 'scrollbar-hide absolute inset-0 grid cursor-grab select-none place-items-center overflow-auto overscroll-contain p-4 active:cursor-grabbing'
           }
         >
+          {/*
+            크기를 잰 뒤에는 배율과 상관없이 계산한 픽셀 값만 쓴다.
+
+            예전에는 100% 일 때만 CSS(object-contain)로 맞추고 확대할 때만 계산값을 썼는데,
+            두 방식의 결과가 미묘하게 달라서 100% -> 110% 로 올리는 순간
+            오히려 작아지는 일이 있었다. 한 가지 방식으로 통일하면 그 경계가 사라진다.
+            (아직 크기를 못 잰 로딩 직후에만 CSS 로 맞춘다)
+          */}
           <img
             key={images[index]}
             src={images[index]}
             alt={`갤러리 사진 ${index + 1}`}
-            onClick={(e) => e.stopPropagation()}
-            onDoubleClick={() => setZoom((z) => (z === 1 ? 2.5 : 1))}
-            className={
-              zoom === 1
-                ? 'lightbox-image max-h-full max-w-full rounded-lg object-contain shadow-[0_28px_70px_rgba(0,0,0,0.7)] ring-1 ring-white/20'
-                : 'block max-w-none rounded-lg ring-1 ring-white/20'
+            onLoad={(e) =>
+              setNatural({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })
             }
-            style={zoom === 1 ? undefined : { width: `${zoom * 100}%` }}
+            onClick={(e) => e.stopPropagation()}
+            onDoubleClick={() => setZoom((z) => (z === 1 ? 2 : 1))}
+            draggable={false}
+            className={
+              displaySize
+                ? `block max-w-none rounded-lg ring-1 ring-white/20 ${
+                    zoom === 1 ? 'lightbox-image shadow-[0_28px_70px_rgba(0,0,0,0.7)]' : ''
+                  }`
+                : 'lightbox-image max-h-full max-w-full rounded-lg object-contain shadow-[0_28px_70px_rgba(0,0,0,0.7)] ring-1 ring-white/20'
+            }
+            style={displaySize}
           />
         </div>
 

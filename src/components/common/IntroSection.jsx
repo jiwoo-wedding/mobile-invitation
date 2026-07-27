@@ -12,7 +12,7 @@ export default function IntroSection({ view }) {
   const { groom, bride } = CONFIG.couple;
 
   return (
-    <section className="relative flex h-screen w-full flex-col items-center justify-between overflow-hidden text-center">
+    <section className="relative flex h-[100svh] w-full flex-col items-center justify-between overflow-hidden text-center">
       {mainImage && (
         <img
           src={mainImage}
