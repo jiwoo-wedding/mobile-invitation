@@ -6,7 +6,7 @@ import { CONFIG } from '../../config/invitationConfig';
 import SectionTitle from './SectionTitle';
 import { useInView } from '../../hooks/useInView';
 
-const MAX_ZOOM = 2.5;
+const MAX_ZOOM = 2;
 const ZOOM_STEP = 0.1;
 
 export default function GallerySection() {
