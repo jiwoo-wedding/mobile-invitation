@@ -11,7 +11,7 @@ function getRemaining(target) {
   if (diff <= 0) {
     return { days: 0, hours: 0, minutes: 0, seconds: 0, passed: true };
   }
-  const totalSeconds = Math.floor(diff / 60000);
+  const totalSeconds = Math.floor(diff / 1000);
   return {
     days: Math.floor(totalSeconds / 86400),
     hours: Math.floor((totalSeconds % 86400) / 3600),
@@ -31,7 +31,7 @@ export default function DdaySection({ view }) {
     //  탭이 백그라운드로 갔다 와도, 자정을 넘겨도 값이 정확하다.)
     const timer = setInterval(() => {
       setRemaining(getRemaining(target));
-    }, 1000);
+    }, 60000);
 
     return () => clearInterval(timer); // 언마운트 시 정리
   }, [CONFIG.wedding.date, CONFIG.wedding.time]);
