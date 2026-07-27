@@ -3,7 +3,7 @@ import { CONFIG } from '../../config/invitationConfig';
 import { weddingDate, formatFullDate, formatTime } from '../../lib/format';
 import SectionTitle from './SectionTitle';
 import WeddingCalendar from './WeddingCalendar';
-import { showsTime, showsCountdownDetail } from '../../lib/visibility';
+import { showsTime } from '../../lib/visibility';
 
 /** 남은 시간을 {일, 시, 분, 초, 지남} 으로 계산 */
 function getRemaining(target) {
@@ -11,7 +11,7 @@ function getRemaining(target) {
   if (diff <= 0) {
     return { days: 0, hours: 0, minutes: 0, seconds: 0, passed: true };
   }
-  const totalSeconds = Math.floor(diff / 1000);
+  const totalSeconds = Math.floor(diff / 60000);
   return {
     days: Math.floor(totalSeconds / 86400),
     hours: Math.floor((totalSeconds % 86400) / 3600),
@@ -38,16 +38,6 @@ export default function DdaySection({ view }) {
 
   const { groom, bride } = CONFIG.couple;
   // 외부 알림용은 남은 날짜만, 내빈용은 시·분·초까지 보여준다
-  const detailed = showsCountdownDetail(view);
-
-  const units = detailed
-    ? [
-        { label: 'DAYS', value: remaining.days },
-        { label: 'HOUR', value: remaining.hours },
-        { label: 'MIN', value: remaining.minutes },
-        { label: 'SEC', value: remaining.seconds },
-      ]
-    : [{ label: 'DAYS', value: remaining.days }];
 
   return (
     <section className="px-5 py-6">
@@ -58,23 +48,7 @@ export default function DdaySection({ view }) {
 
       <WeddingCalendar />
 
-      <div className={`mt-4 ${detailed ? 'grid grid-cols-4 gap-2' : 'flex justify-center'}`}>
-        {units.map((unit) => (
-          <div
-            key={unit.label}
-            className={`rounded-xl border border-line/30 bg-surface/40 py-4 text-center ${
-              detailed ? '' : 'w-32'
-            }`}
-          >
-            <div className="font-batang text-2xl font-bold text-accent tabular-nums">
-              {String(unit.value).padStart(2, '0')}
-            </div>
-            <div className="mt-1 text-[10px] tracking-widest text-muted">{unit.label}</div>
-          </div>
-        ))}
-      </div>
-
-      <p className="mt-4 text-center text-sm text-muted">
+      <p className="mt-5 text-center text-sm text-muted">
         {remaining.passed
           ? `${groom.name}, ${bride.name}의 결혼식이 있었습니다. 함께해 주셔서 감사합니다.`
           : `${groom.name} ♥ ${bride.name}의 결혼식이 ${remaining.days}일 남았습니다.`}
