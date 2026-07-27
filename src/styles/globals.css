@@ -31,7 +31,13 @@
 }
 
 html {
+  /*
+    스크롤바 자리를 늘 확보한다.
+    scrollbar-gutter 는 구형 브라우저에서 무시되므로 overflow-y: scroll 을 함께 둔다.
+    내용이 짧아도 스크롤바가 항상 보이지만, 대신 폭이 절대 변하지 않는다.
+  */
   scrollbar-gutter: stable;
+  overflow-y: scroll;
 }
 
 body {
