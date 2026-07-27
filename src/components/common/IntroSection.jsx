@@ -17,7 +17,7 @@ export default function IntroSection({ view }) {
         <img
           src={mainImage}
           alt="신랑 신부 대표 사진"
-          className="animate-ken-burns absolute inset-0 z-0 h-full w-full object-cover"
+          className="absolute inset-0 z-0 h-full w-full object-cover"
           style={{ objectPosition: CONFIG.mainPhotoPosition ?? '50% 50%' }}
         />
       )}
