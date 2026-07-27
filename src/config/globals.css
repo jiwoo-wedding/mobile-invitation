@@ -40,6 +40,14 @@ body {
   justify-content: center;
   min-height: 100vh;
   transition: background-color 0.4s ease;
+
+  /*
+    스크롤바 자리를 항상 비워 둔다.
+    커튼(fixed)만 떠 있을 때는 문서 높이가 없어 스크롤바가 없다가,
+    본문이 나타나며 스크롤바가 생기면 body 폭이 줄어 화면이 옆으로 밀린다.
+    미리 자리를 잡아 두면 그 순간의 흔들림이 사라진다.
+  */
+  scrollbar-gutter: stable;
 }
 
 /* 모바일 청첩장 본체: 최대 480px, 항상 중앙 정렬 */
