@@ -21,8 +21,16 @@ export default function GallerySection() {
 
   const [index, setIndex] = useState(null); // null 이면 확대 보기 닫힘
   const [zoom, setZoom] = useState(1);
-  const touchRef = useRef(null);
+  const touchRef = useRef(null);   // 한 손가락 스와이프 시작 x 좌표
+  const pinchRef = useRef(null);   // 두 손가락 확대 시작 정보
   const scrollRef = useRef(null);
+  const lightboxRef = useRef(null);
+
+  // 터치 처리는 네이티브 리스너로 붙이므로, 최신 zoom 값을 ref 로 따로 들고 있는다
+  const zoomRef = useRef(1);
+  useEffect(() => {
+    zoomRef.current = zoom;
+  }, [zoom]);
 
   const close = () => setIndex(null);
   const prev = () => setIndex((i) => (i - 1 + images.length) % images.length);
@@ -59,6 +67,75 @@ export default function GallerySection() {
     };
   }, [index]);
 
+  /*
+    확대 보기 안에서만 두 손가락 확대/축소(핀치)를 처리한다.
+
+    index.html 의 뷰포트가 user-scalable=no 라 브라우저 기본 핀치는 막혀 있다.
+    청첩장 본문이 통째로 확대돼 레이아웃이 깨지는 걸 막기 위한 설정이라 그대로 두고,
+    사진을 볼 때만 여기서 직접 배율을 계산한다.
+
+    React 의 onTouchMove 는 passive 로 붙을 수 있어 preventDefault 가 무시된다.
+    그래서 네이티브 리스너로 { passive: false } 를 명시해 붙인다.
+  */
+  useEffect(() => {
+    if (index === null) return;
+    const el = lightboxRef.current;
+    if (!el) return;
+
+    /** 두 손가락 사이 거리 */
+    const distance = (touches) =>
+      Math.hypot(
+        touches[0].clientX - touches[1].clientX,
+        touches[0].clientY - touches[1].clientY
+      );
+
+    const onTouchStart = (e) => {
+      if (e.touches.length === 2) {
+        // 확대 시작 — 스와이프는 취소한다
+        pinchRef.current = { startDistance: distance(e.touches), startZoom: zoomRef.current };
+        touchRef.current = null;
+      } else if (e.touches.length === 1 && zoomRef.current === 1) {
+        // 원본 크기일 때만 좌우 스와이프로 사진을 넘긴다
+        touchRef.current = e.touches[0].clientX;
+      }
+    };
+
+    const onTouchMove = (e) => {
+      if (e.touches.length !== 2 || !pinchRef.current) return;
+
+      e.preventDefault(); // 확대 중 화면이 같이 움직이지 않도록
+
+      const ratio = distance(e.touches) / pinchRef.current.startDistance;
+      const next = pinchRef.current.startZoom * ratio;
+
+      // 1 에 가까우면 원본으로 붙여 준다 (손을 떼기 전에 화면이 흔들리지 않게)
+      setZoom(Math.min(MAX_ZOOM, Math.max(1, next < 1.05 ? 1 : next)));
+    };
+
+    const onTouchEnd = (e) => {
+      if (e.touches.length < 2) pinchRef.current = null;
+
+      if (touchRef.current === null) return;
+
+      const delta = e.changedTouches[0].clientX - touchRef.current;
+      if (delta > 50) prev();
+      if (delta < -50) next();
+      touchRef.current = null;
+    };
+
+    el.addEventListener('touchstart', onTouchStart, { passive: true });
+    el.addEventListener('touchmove', onTouchMove, { passive: false });
+    el.addEventListener('touchend', onTouchEnd, { passive: true });
+    el.addEventListener('touchcancel', onTouchEnd, { passive: true });
+
+    return () => {
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('touchend', onTouchEnd);
+      el.removeEventListener('touchcancel', onTouchEnd);
+    };
+  }, [index, images.length]);
+
   if (images.length === 0) {
     return (
       <section className="px-5 py-6">
@@ -69,18 +146,6 @@ export default function GallerySection() {
       </section>
     );
   }
-
-  // 원본 크기일 때만 스와이프로 사진을 넘긴다 (확대 중에는 스크롤이 우선)
-  const onTouchStart = (e) => {
-    touchRef.current = zoom === 1 && e.touches.length === 1 ? e.touches[0].clientX : null;
-  };
-  const onTouchEnd = (e) => {
-    if (touchRef.current === null) return;
-    const delta = e.changedTouches[0].clientX - touchRef.current;
-    if (delta > 50) prev();
-    if (delta < -50) next();
-    touchRef.current = null;
-  };
 
   const onWheel = (e) => {
     if (!e.ctrlKey && Math.abs(e.deltaY) < 4) return;
@@ -113,12 +178,11 @@ export default function GallerySection() {
     index !== null &&
     createPortal(
       <div
+        ref={lightboxRef}
         className="lightbox fixed inset-0 z-[100]"
         role="dialog"
         aria-modal="true"
         aria-label={`갤러리 사진 ${index + 1} / ${images.length}`}
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
       >
         {/* 보고 있는 사진을 크게 번지게 깔아 시선이 사진에 모이도록 */}
         <img
@@ -199,7 +263,7 @@ export default function GallerySection() {
           <ChevronRight size={22} />
         </button>
 
-        <div className="fixed bottom-5 left-1/2 flex -translate-x-1/2 items-center gap-2">
+        <div className="fixed bottom-5 left-1/2 flex max-w-[calc(100vw-1rem)] -translate-x-1/2 items-center gap-1.5">
           <button
             onClick={zoomOut}
             disabled={zoom <= 1}
@@ -209,7 +273,7 @@ export default function GallerySection() {
             <ZoomOut size={17} />
           </button>
 
-          <p className="whitespace-nowrap rounded-full bg-black/55 px-3.5 py-2 text-xs tabular-nums text-white/85 ring-1 ring-white/15">
+          <p className="whitespace-nowrap rounded-full bg-black/55 px-3 py-2 text-xs tabular-nums text-white/85 ring-1 ring-white/15">
             {index + 1}&nbsp;/&nbsp;{images.length}
             {zoom > 1 && <span className="ml-2 text-white/60">{Math.round(zoom * 100)}%</span>}
           </p>
