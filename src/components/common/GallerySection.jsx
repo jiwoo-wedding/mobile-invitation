@@ -209,8 +209,8 @@ export default function GallerySection() {
             <ZoomOut size={17} />
           </button>
 
-          <p className="rounded-full bg-black/55 px-3.5 py-2 text-xs tabular-nums text-white/85 ring-1 ring-white/15">
-            {index + 1} / {images.length}
+          <p className="whitespace-nowrap rounded-full bg-black/55 px-3.5 py-2 text-xs tabular-nums text-white/85 ring-1 ring-white/15">
+            {index + 1}&nbsp;/&nbsp;{images.length}
             {zoom > 1 && <span className="ml-2 text-white/60">{Math.round(zoom * 100)}%</span>}
           </p>
 
