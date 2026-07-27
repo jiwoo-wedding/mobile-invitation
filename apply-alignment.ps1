@@ -1,0 +1,187 @@
+﻿<#
+  인사말 정렬 (5열) + 커튼에서 본문으로 넘어갈 때 폭 흔들림 제거
+
+  1) 인사말 — 다섯 개의 열로 나눠 이름과 '아들/딸'을 같은 선에 맞춥니다.
+
+       장재필 · 최미순  의  첫째  아들  장성빈
+       엄길용 · 조영순  의  둘째    딸  엄지우
+                                  ↑     ↑
+                              오른쪽 정렬  이름 시작선 일치
+
+     '아들 / 딸' 열은 오른쪽 정렬이라 글자 수가 달라도 이름 앞이 가지런합니다.
+     invitationConfig.js 의 order 값('첫째 아들')을 공백 기준으로 자동 분리하므로
+     설정 파일은 고치지 않아도 됩니다. 공백이 없는 값('장남')도 그대로 동작합니다.
+
+  2) 스크롤바 자리 확보 (scrollbar-gutter)
+     커튼은 fixed 라 문서 높이가 없어 스크롤바가 없다가,
+     본문이 나타나며 스크롤바가 생기면 화면이 옆으로 밀렸습니다. PC 에서만 보이던 증상입니다.
+
+  바뀌는 파일 2개:
+    src\components\common\GreetingSection.jsx
+    src\styles\globals.css
+
+  ⚠️ invitationConfig.js 는 건드리지 않습니다.
+
+  두는 곳: C:\Users\sb622\OneDrive\문서\GitHub\mobile-invitation\apply-alignment.ps1
+  실행:
+      cd "C:\Users\sb622\OneDrive\문서\GitHub\mobile-invitation"
+      powershell -ExecutionPolicy Bypass -File .\apply-alignment.ps1
+
+  되돌리려면:
+      git checkout -- src/components/common/GreetingSection.jsx src/styles/globals.css
+#>
+
+$ErrorActionPreference = 'Stop'
+
+if (-not (Test-Path .\package.json)) {
+  Write-Host '프로젝트 폴더에서 실행하세요 (package.json 이 있는 곳).' -ForegroundColor Red
+  exit 1
+}
+
+function Write-ProjectFile {
+  param([string]$Path, [string]$Base64)
+  [IO.File]::WriteAllBytes(
+    (Join-Path (Get-Location) $Path),
+    [Convert]::FromBase64String($Base64)
+  )
+  Write-Host ('  덮어씀  ' + $Path)
+}
+
+Write-Host ''
+
+Write-ProjectFile -Path 'src\components\common\GreetingSection.jsx' -Base64 (
+  'aW1wb3J0IFJlYWN0IGZyb20gJ3JlYWN0JzsKaW1wb3J0IHsgQ09ORklHIH0gZnJvbSAnLi4vLi4vY29uZmlnL2ludml0YXRpb25Db25maWcnOwppbXBvcnQg' +
+  'eyB3aXRoRGVjZWFzZWQgfSBmcm9tICcuLi8uLi9saWIvZm9ybWF0JzsKCi8qKiDsnbjsgqzrp5Ag4oCUIOy0iOuMgOyepSDsooXrpZgodmlldynsl5Ag65Sw' +
+  '6528IOusuOq1rOqwgCDthrXsp7jroZwg67CU64CQ64ukICovCmV4cG9ydCBkZWZhdWx0IGZ1bmN0aW9uIEdyZWV0aW5nU2VjdGlvbih7IHZpZXcgfSkgewog' +
+  'IGNvbnN0IHsgZ3Jvb20sIGJyaWRlIH0gPSBDT05GSUcuY291cGxlOwoKICAvKgogICAg7ZWcIOykhOuhnCDsnbTslrQg7JOw66m0ICfssqvsp7gg7JWE65Ok' +
+  'Jyg07J6QKeqzvCAn65GY7Ke4IOuUuCcoM+yekCnsnZgg6ri47J20IOywqOydtOunjO2BvAogICAg7Iug656RIOydtOumhOqzvCDsi6DrtoAg7J2066aE7J20' +
+  'IOyEnOuhnCDslrTquIvrgpzri6QuCiAgICDqt7jrnpjshJwg64uk7ISvIOqwnOydmCDsl7TroZwg64KY64iI64ukLgoKICAgICAg7J6l7J6s7ZWEIMK3IOy1' +
+  'nOuvuOyInCDilIIg7J2YIOKUgiDssqvsp7gg4pSCIOyVhOuTpCDilIIg7J6l7ISx67mICiAgICAgIOyXhOq4uOyaqSDCtyDsobDsmIHsiJwg4pSCIOydmCDi' +
+  'lIIg65GY7Ke4IOKUgiAgIOuUuCDilIIg7JeE7KeA7JqwCgogICAgJ+yVhOuTpCAvIOuUuCcg7Je07J2AIOyYpOuluOyqvSDsoJXroKzsnbTrnbwg6riA7J6Q' +
+  'IOyImOqwgCDri6zrnbzrj4Qg7J2066aEIOyVnuydtCDqsIDsp4Drn7DtlZjri6QuCiAgKi8KCiAgLyoqICfssqvsp7gg7JWE65OkJyDihpIgWyfssqvsp7gn' +
+  'LCAn7JWE65OkJ10gLyAn7J6l64KoJyDihpIgWycnLCAn7J6l64KoJ10gKi8KICBjb25zdCBzcGxpdE9yZGVyID0gKG9yZGVyID0gJycpID0+IHsKICAgIGNv' +
+  'bnN0IHBhcnRzID0gb3JkZXIudHJpbSgpLnNwbGl0KC9ccysvKTsKICAgIGlmIChwYXJ0cy5sZW5ndGggPCAyKSByZXR1cm4gWycnLCBwYXJ0c1swXSA/PyAn' +
+  'J107CiAgICByZXR1cm4gW3BhcnRzLnNsaWNlKDAsIC0xKS5qb2luKCcgJyksIHBhcnRzW3BhcnRzLmxlbmd0aCAtIDFdXTsKICB9OwoKICBjb25zdCByb3dz' +
+  'ID0gWwogICAgeyBzaWRlOiBncm9vbSwgbmFtZTogZ3Jvb20ubmFtZSB9LAogICAgeyBzaWRlOiBicmlkZSwgbmFtZTogYnJpZGUubmFtZSB9LAogIF07Cgog' +
+  'IHJldHVybiAoCiAgICA8c2VjdGlvbiBjbGFzc05hbWU9InB4LTUgcHktOCB0ZXh0LWNlbnRlciBmb250LWJhdGFuZyI+CiAgICAgIDxkaXYgY2xhc3NOYW1l' +
+  'PSJzcGFjZS15LTYgcm91bmRlZC0yeGwgYm9yZGVyIGJvcmRlci1saW5lLzMwIGJnLXN1cmZhY2UvNDAgcC04IGJhY2tkcm9wLWJsdXItc20iPgogICAgICAg' +
+  'IDxkaXYgY2xhc3NOYW1lPSJ0ZXh0LXhzIHRyYWNraW5nLVswLjNlbV0gdGV4dC1hY2NlbnQiPnt2aWV3LmdyZWV0aW5nVGl0bGV9PC9kaXY+CgogICAgICAg' +
+  'IDxkaXYgY2xhc3NOYW1lPSJteC1hdXRvIGdyaWQgdy1maXQgZ3JpZC1jb2xzLVthdXRvX2F1dG9fYXV0b19hdXRvX2F1dG9dIGl0ZW1zLWJhc2VsaW5lIGdh' +
+  'cC14LTEuNSBnYXAteS0xLjUgdGV4dC1zbSI+CiAgICAgICAgICB7cm93cy5tYXAoKHsgc2lkZSwgbmFtZSB9KSA9PiB7CiAgICAgICAgICAgIGNvbnN0IFtv' +
+  'cmRpbmFsLCBraW5kXSA9IHNwbGl0T3JkZXIoc2lkZS5vcmRlcik7CgogICAgICAgICAgICByZXR1cm4gKAogICAgICAgICAgICAgIDxSZWFjdC5GcmFnbWVu' +
+  'dCBrZXk9e25hbWV9PgogICAgICAgICAgICAgICAgPHNwYW4gY2xhc3NOYW1lPSJ3aGl0ZXNwYWNlLW5vd3JhcCB0ZXh0LXJpZ2h0IGZvbnQtc2VtaWJvbGQg' +
+  'dGV4dC1pbmsvOTAiPgogICAgICAgICAgICAgICAgICB7d2l0aERlY2Vhc2VkKHNpZGUuZmF0aGVyLCBzaWRlLmZhdGhlckRlY2Vhc2VkKX0gwrd7JyAnfQog' +
+  'ICAgICAgICAgICAgICAgICB7d2l0aERlY2Vhc2VkKHNpZGUubW90aGVyLCBzaWRlLm1vdGhlckRlY2Vhc2VkKX0KICAgICAgICAgICAgICAgIDwvc3Bhbj4K' +
+  'ICAgICAgICAgICAgICAgIDxzcGFuIGNsYXNzTmFtZT0idGV4dC1tdXRlZCI+7J2YPC9zcGFuPgogICAgICAgICAgICAgICAgPHNwYW4gY2xhc3NOYW1lPSJ3' +
+  'aGl0ZXNwYWNlLW5vd3JhcCB0ZXh0LWxlZnQgdGV4dC1tdXRlZCI+e29yZGluYWx9PC9zcGFuPgogICAgICAgICAgICAgICAgPHNwYW4gY2xhc3NOYW1lPSJ3' +
+  'aGl0ZXNwYWNlLW5vd3JhcCB0ZXh0LXJpZ2h0IHRleHQtbXV0ZWQiPntraW5kfTwvc3Bhbj4KICAgICAgICAgICAgICAgIDxzcGFuIGNsYXNzTmFtZT0id2hp' +
+  'dGVzcGFjZS1ub3dyYXAgdGV4dC1sZWZ0IGZvbnQtYm9sZCB0ZXh0LWFjY2VudCI+e25hbWV9PC9zcGFuPgogICAgICAgICAgICAgIDwvUmVhY3QuRnJhZ21l' +
+  'bnQ+CiAgICAgICAgICAgICk7CiAgICAgICAgICB9KX0KICAgICAgICA8L2Rpdj4KCiAgICAgICAgPGRpdiBjbGFzc05hbWU9InB5LTIgdGV4dC1hY2NlbnQi' +
+  'IGFyaWEtaGlkZGVuPSJ0cnVlIj4KICAgICAgICAgIOKYhQogICAgICAgIDwvZGl2PgoKICAgICAgICA8cCBjbGFzc05hbWU9IndoaXRlc3BhY2UtcHJlLWxp' +
+  'bmUgdGV4dC1zbSBsZWFkaW5nLTggdGV4dC1pbmsvOTAiPnt2aWV3LmdyZWV0aW5nVGV4dH08L3A+CiAgICAgIDwvZGl2PgogICAgPC9zZWN0aW9uPgogICk7' +
+  'Cn0K'
+)
+
+Write-ProjectFile -Path 'src\styles\globals.css' -Base64 (
+  'QGltcG9ydCB1cmwoJ2h0dHBzOi8vZm9udHMuZ29vZ2xlYXBpcy5jb20vY3NzMj9mYW1pbHk9R293dW4rQmF0YW5nOndnaHRANDAwOzcwMCZmYW1pbHk9Tm90' +
+  'bytTYW5zK0tSOndnaHRAMzAwOzQwMDs1MDA7NzAwJmRpc3BsYXk9c3dhcCcpOwoKQHRhaWx3aW5kIGJhc2U7CkB0YWlsd2luZCBjb21wb25lbnRzOwpAdGFp' +
+  'bHdpbmQgdXRpbGl0aWVzOwoKLyoKICDsg4nsg4Eg7Yag7YGw7J2YIOyLpOygnCDqsJLsnYAgc3JjL2NvbmZpZy90aGVtZXMuanMg6rCAIOufsO2DgOyehOyX' +
+  'kCDso7zsnoXtlZzri6QuCiAg7JWE656YIOqwkuydgCDthYzrp4gg7KCB7JqpIOyghCDssqsg7Y6Y7J247Yq47JeQ7IScIOyTsOydtOuKlCDquLDrs7jqsJIo' +
+  '7Iuc6re464uI7LKYIOyYrOumrOu4jCnsnbTri6QuCiovCjpyb290IHsKICAvKiDssq3ssqnsnqUg67O47LK0IOy1nOuMgCDtj60uIDQ4MH42MDBweCDsgqzs' +
+  'nbTsl5DshJwg7Leo7Zal6ruPIOyhsOygiO2VmOyEuOyalC4gKi8KICAtLWNvbnRhaW5lci1tYXg6IDU2MHB4OwoKICAtLWMtcGFnZTogIzFhMWMxNDsKICAt' +
+  'LWMtcGFnZS1yZ2I6IDI2IDI4IDIwOwogIC0tYy1iZzogIzQ3NGEzNzsKICAtLWMtYmctcmdiOiA3MSA3NCA1NTsKICAtLWMtc3VyZmFjZTogIzJmMzMyNzsK' +
+  'ICAtLWMtc3VyZmFjZS1yZ2I6IDQ3IDUxIDM5OwogIC0tYy1hY2NlbnQ6ICNkOGU1OTI7CiAgLS1jLWFjY2VudC1yZ2I6IDIxNiAyMjkgMTQ2OwogIC0tYy1h' +
+  'Y2NlbnQtZmc6ICM0NzRhMzc7CiAgLS1jLWFjY2VudC1mZy1yZ2I6IDcxIDc0IDU1OwogIC0tYy10ZXh0OiAjZjFmM2U4OwogIC0tYy10ZXh0LXJnYjogMjQx' +
+  'IDI0MyAyMzI7CiAgLS1jLW11dGVkOiAjYjliZmE0OwogIC0tYy1tdXRlZC1yZ2I6IDE4NSAxOTEgMTY0OwogIC0tYy1ib3JkZXI6ICNkOGU1OTI7CiAgLS1j' +
+  'LWJvcmRlci1yZ2I6IDIxNiAyMjkgMTQ2Owp9Cgpib2R5IHsKICBtYXJnaW46IDA7CiAgcGFkZGluZzogMDsKICBiYWNrZ3JvdW5kLWNvbG9yOiB2YXIoLS1j' +
+  'LXBhZ2UpOwogIGZvbnQtZmFtaWx5OiAnTm90byBTYW5zIEtSJywgc2Fucy1zZXJpZjsKICBjb2xvcjogdmFyKC0tYy10ZXh0KTsKICBkaXNwbGF5OiBmbGV4' +
+  'OwogIGp1c3RpZnktY29udGVudDogY2VudGVyOwogIG1pbi1oZWlnaHQ6IDEwMHZoOwogIHRyYW5zaXRpb246IGJhY2tncm91bmQtY29sb3IgMC40cyBlYXNl' +
+  'OwoKICAvKgogICAg7Iqk7YGs66Gk67CUIOyekOumrOulvCDtla3sg4Eg67mE7JuMIOuRlOuLpC4KICAgIOy7pO2KvChmaXhlZCnrp4wg65agIOyeiOydhCDr' +
+  'lYzripQg66y47IScIOuGkuydtOqwgCDsl4bslrQg7Iqk7YGs66Gk67CU6rCAIOyXhuuLpOqwgCwKICAgIOuzuOusuOydtCDrgpjtg4DrgpjrqbAg7Iqk7YGs' +
+  '66Gk67CU6rCAIOyDneq4sOuptCBib2R5IO2PreydtCDspITslrQg7ZmU66m07J20IOyYhuycvOuhnCDrsIDrprDri6QuCiAgICDrr7jrpqwg7J6Q66as66W8' +
+  'IOyeoeyVhCDrkZDrqbQg6re4IOyInOqwhOydmCDtnZTrk6TrprzsnbQg7IKs65287KeE64ukLgogICAgKO2ctOuMgO2PsOydgCDsiqTtgazroaTrsJTqsIAg' +
+  '7L2Y7YWQ7LigIOychOyXkCDqsrnss5Ag65ag7IScIOybkOuemCDsnbQg66y47KCc6rCAIOyXhuuLpCkKICAqLwogIHNjcm9sbGJhci1ndXR0ZXI6IHN0YWJs' +
+  'ZTsKfQoKLyog66qo67CU7J28IOyyreyyqeyepSDrs7jssrQ6IOy1nOuMgCA0ODBweCwg7ZWt7IOBIOykkeyVmSDsoJXroKwgKi8KLm1vYmlsZS1jb250YWlu' +
+  'ZXIgewogIHdpZHRoOiAxMDAlOwogIG1heC13aWR0aDogdmFyKC0tY29udGFpbmVyLW1heCk7CiAgbWluLWhlaWdodDogMTAwdmg7CiAgYmFja2dyb3VuZC1j' +
+  'b2xvcjogdmFyKC0tYy1iZyk7CiAgYm94LXNoYWRvdzogMCAwIDMwcHggcmdiKDAgMCAwIC8gMC41KTsKICBwb3NpdGlvbjogcmVsYXRpdmU7CiAgdHJhbnNp' +
+  'dGlvbjogYmFja2dyb3VuZC1jb2xvciAwLjRzIGVhc2U7CgogIC8qCiAgICDqsIDroZwg64SY7Lmo66eMIOyemOudvOuCtOqzoCDshLjroZwg7Iqk7YGs66Gk' +
+  '7J2AIOunjOuTpOyngCDslYrripTri6QuCiAgICBvdmVyZmxvdy14OiBoaWRkZW4g7J2EIOyTsOuptCBDU1Mg6rec7LmZ7IOBIG92ZXJmbG93LXkg6rCAIGF1' +
+  'dG8g66GcIOqzhOyCsOuQmOyWtAogICAg7J20IOyalOyGjOqwgCDsnpDssrQg7Iqk7YGs66GkIOy7qO2FjOydtOuEiOqwgCDrkJzri6QuIOq3uOufrOuptCDr' +
+  'uIzrnbzsmrDsoIAg7Iqk7YGs66Gk67CUIOyViOyqveyXkAogICAg65iQIO2VmOuCmOydmCDsiqTtgazroaTrsJTqsIAg7IOd6riw6rOgLCDrqqjri6zsnYQg' +
+  '7Je0IOuVjCDrsLDqsr0g7Iqk7YGs66Gk64+EIOyViCDsnqDquLTri6QuCiAgICBjbGlwIOydgCDri6Trpbgg7LaV7J2EIOqxtOuTnOumrOyngCDslYrripTr' +
+  'i6QuCiAgKi8KICBvdmVyZmxvdy14OiBjbGlwOwp9CgouZm9udC1iYXRhbmcgewogIGZvbnQtZmFtaWx5OiAnR293dW4gQmF0YW5nJywgc2VyaWY7Cn0KCi8q' +
+  'IOKUgOKUgCDthYzrp4jrs4Qg67Cw6rK9IO2MqO2EtCDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDi' +
+  'lIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIAgKi8KW2RhdGEtcGF0dGVybj0nZG90cyddIC5tb2JpbGUtY29udGFpbmVyLApbZGF0YS1wYXR0' +
+  'ZXJuPSdkb3RzJ10gLmNvdmVyLXNjcmVlbiB7CiAgYmFja2dyb3VuZC1pbWFnZTogcmFkaWFsLWdyYWRpZW50KAogICAgcmdiKHZhcigtLWMtYWNjZW50LXJn' +
+  'YikgLyAwLjQ1KSAwLjc1cHgsCiAgICB0cmFuc3BhcmVudCAwLjc1cHgKICApOwogIGJhY2tncm91bmQtc2l6ZTogMTZweCAxNnB4Owp9CgpbZGF0YS1wYXR0' +
+  'ZXJuPSdzdGFycyddIC5tb2JpbGUtY29udGFpbmVyLApbZGF0YS1wYXR0ZXJuPSdzdGFycyddIC5jb3Zlci1zY3JlZW4gewogIGJhY2tncm91bmQtaW1hZ2U6' +
+  'CiAgICByYWRpYWwtZ3JhZGllbnQocmdiKHZhcigtLWMtYWNjZW50LXJnYikgLyAwLjcpIDAuOHB4LCB0cmFuc3BhcmVudCAwLjhweCksCiAgICByYWRpYWwt' +
+  'Z3JhZGllbnQocmdiKHZhcigtLWMtdGV4dC1yZ2IpIC8gMC4yNSkgMC42cHgsIHRyYW5zcGFyZW50IDAuNnB4KTsKICBiYWNrZ3JvdW5kLXNpemU6IDkwcHgg' +
+  'OTBweCwgNDBweCA0MHB4OwogIGJhY2tncm91bmQtcG9zaXRpb246IDAgMCwgMjBweCAzMHB4Owp9CgpbZGF0YS1wYXR0ZXJuPSdncmFpbiddIC5tb2JpbGUt' +
+  'Y29udGFpbmVyLApbZGF0YS1wYXR0ZXJuPSdncmFpbiddIC5jb3Zlci1zY3JlZW4gewogIGJhY2tncm91bmQtaW1hZ2U6IHJlcGVhdGluZy1saW5lYXItZ3Jh' +
+  'ZGllbnQoCiAgICA0NWRlZywKICAgIHJnYih2YXIoLS1jLWJvcmRlci1yZ2IpIC8gMC4wNikgMCAycHgsCiAgICB0cmFuc3BhcmVudCAycHggNXB4CiAgKTsK' +
+  'fQoKW2RhdGEtcGF0dGVybj0naGFuamknXSAubW9iaWxlLWNvbnRhaW5lciwKW2RhdGEtcGF0dGVybj0naGFuamknXSAuY292ZXItc2NyZWVuIHsKICBiYWNr' +
+  'Z3JvdW5kLWltYWdlOgogICAgcmVwZWF0aW5nLWxpbmVhci1ncmFkaWVudCgwZGVnLCByZ2IodmFyKC0tYy1ib3JkZXItcmdiKSAvIDAuMDgpIDAgMXB4LCB0' +
+  'cmFuc3BhcmVudCAxcHggN3B4KSwKICAgIHJlcGVhdGluZy1saW5lYXItZ3JhZGllbnQoOTBkZWcsIHJnYih2YXIoLS1jLWJvcmRlci1yZ2IpIC8gMC4wNikg' +
+  'MCAxcHgsIHRyYW5zcGFyZW50IDFweCA3cHgpOwp9CgpbZGF0YS1wYXR0ZXJuPSdub25lJ10gLm1vYmlsZS1jb250YWluZXIsCltkYXRhLXBhdHRlcm49J25v' +
+  'bmUnXSAuY292ZXItc2NyZWVuIHsKICBiYWNrZ3JvdW5kLWltYWdlOiBub25lOwp9CgovKiDilIDilIAg6rO17Ya1IOycoO2LuCDilIDilIDilIDilIDilIDi' +
+  'lIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDi' +
+  'lIDilIAgKi8KLnNlY3Rpb24tZGl2aWRlciB7CiAgZGlzcGxheTogZmxleDsKICBhbGlnbi1pdGVtczogY2VudGVyOwogIGp1c3RpZnktY29udGVudDogY2Vu' +
+  'dGVyOwogIHBhZGRpbmc6IDI0cHggMDsKICBjb2xvcjogdmFyKC0tYy1hY2NlbnQpOwogIG9wYWNpdHk6IDAuODsKICBmb250LXNpemU6IDEycHg7CiAgbGV0' +
+  'dGVyLXNwYWNpbmc6IDZweDsKfQoKQGtleWZyYW1lcyBib3VuY2Utc2xvdyB7CiAgMCUsCiAgMTAwJSB7CiAgICB0cmFuc2Zvcm06IHRyYW5zbGF0ZVkoMCk7' +
+  'CiAgfQogIDUwJSB7CiAgICB0cmFuc2Zvcm06IHRyYW5zbGF0ZVkoLTEwcHgpOwogIH0KfQouYW5pbWF0ZS1ib3VuY2Utc2xvdyB7CiAgYW5pbWF0aW9uOiBi' +
+  'b3VuY2Utc2xvdyAycyBpbmZpbml0ZTsKfQoKLyog7LSI64yA7J6lIOyXtOq4sCDtmZTrqbTsnZgg7Lm065OcIO2FjOuRkOumrOqwgCDshJzshJztnogg7J6Q' +
+  '66as66W8IOyeoeuKlCDtmqjqs7wgKi8KQGtleWZyYW1lcyBmcmFtZS1pbiB7CiAgZnJvbSB7CiAgICBvcGFjaXR5OiAwOwogICAgdHJhbnNmb3JtOiBzY2Fs' +
+  'ZSgxLjAzKTsKICB9CiAgdG8gewogICAgb3BhY2l0eTogMTsKICAgIHRyYW5zZm9ybTogbm9uZTsKICB9Cn0KLmNvdmVyLWZyYW1lIHsKICBvcGFjaXR5OiAw' +
+  'OwogIGFuaW1hdGlvbjogZnJhbWUtaW4gMS4xcyBjdWJpYy1iZXppZXIoMC4yMiwgMC42MSwgMC4zNiwgMSkgZm9yd2FyZHM7Cn0KCi8qIOuMgO2RnCDsgqzs' +
+  'p4TsnbQg7JWE7KO8IOyynOyynO2eiCDtmZXrjIDrkJjripQg7LyEIOuyiOyKpCDtmqjqs7wgKi8KQGtleWZyYW1lcyBrZW4tYnVybnMgewogIGZyb20gewog' +
+  'ICAgdHJhbnNmb3JtOiBzY2FsZSgxKTsKICB9CiAgdG8gewogICAgdHJhbnNmb3JtOiBzY2FsZSgxLjEyKTsKICB9Cn0KLmFuaW1hdGUta2VuLWJ1cm5zIHsK' +
+  'ICBhbmltYXRpb246IGtlbi1idXJucyAxOHMgZWFzZS1vdXQgZm9yd2FyZHM7Cn0KCi8qIOyyqyDtmZTrqbQg7YWN7Iqk7Yq46rCAIOyInOyEnOuMgOuhnCDs' +
+  'mKzrnbzsmKTripQg65Ox7J6lIO2aqOqzvCAqLwpAa2V5ZnJhbWVzIGVudGVyIHsKICBmcm9tIHsKICAgIG9wYWNpdHk6IDA7CiAgICB0cmFuc2Zvcm06IHRy' +
+  'YW5zbGF0ZVkoMTRweCk7CiAgfQogIHRvIHsKICAgIG9wYWNpdHk6IDE7CiAgICB0cmFuc2Zvcm06IG5vbmU7CiAgfQp9Ci5hbmltYXRlLWVudGVyIHsKICBv' +
+  'cGFjaXR5OiAwOwogIGFuaW1hdGlvbjogZW50ZXIgMC45cyBjdWJpYy1iZXppZXIoMC4yMiwgMC42MSwgMC4zNiwgMSkgZm9yd2FyZHM7Cn0KCi8qIOyKpO2B' +
+  'rOuhpO2VtOyEnCDtmZTrqbTsl5Ag65Ok7Ja07JisIOuVjCDrgpjtg4DrgpjripQg7IS57IWYIChSZXZlYWwg7Lu07Y+s64SM7Yq4KSAqLwoucmV2ZWFsIHsK' +
+  'ICBvcGFjaXR5OiAwOwogIHRyYW5zZm9ybTogdHJhbnNsYXRlWSgyOHB4KTsKICB0cmFuc2l0aW9uOgogICAgb3BhY2l0eSAwLjhzIGN1YmljLWJlemllcigw' +
+  'LjIyLCAwLjYxLCAwLjM2LCAxKSwKICAgIHRyYW5zZm9ybSAwLjhzIGN1YmljLWJlemllcigwLjIyLCAwLjYxLCAwLjM2LCAxKTsKfQovKgogIHdpbGwtY2hh' +
+  'bmdlIOulvCDrhKPsp4Ag7JWK64qU64ukLgogIHdpbGwtY2hhbmdlOiB0cmFuc2Zvcm0g7J2AIHBvc2l0aW9uOmZpeGVkIOyekOyGkOydmCDquLDspIAg67CV' +
+  '7Iqk66W8IOydtCDsmpTshozroZwg67CU6r+U67KE66Ck7IScLAogIOyViOyqvSDtmZXrjIAg67O06riw6rCAIO2ZlOuptCDsoITssrTqsIAg7JWE64uI6528' +
+  'IOyEueyFmCDtj63sl5Ag6rCH7Z6I6rKMIOuQnOuLpC4KKi8KLnJldmVhbC5pcy12aXNpYmxlIHsKICBvcGFjaXR5OiAxOwogIHRyYW5zZm9ybTogbm9uZTsK' +
+  'fQoKLyog6rCk65+s66asIOqyqeyekCDsubjsnbQg7Iic7LCo7KCB7Jy866GcIOuWoOyYpOultOuKlCDtmqjqs7wgKi8KQGtleWZyYW1lcyBjZWxsLWluIHsK' +
+  'ICBmcm9tIHsKICAgIG9wYWNpdHk6IDA7CiAgICB0cmFuc2Zvcm06IHNjYWxlKDAuOSk7CiAgfQogIHRvIHsKICAgIG9wYWNpdHk6IDE7CiAgICB0cmFuc2Zv' +
+  'cm06IG5vbmU7CiAgfQp9Ci8qCiAg6rCk65+s66asIOy5uOydgCDquLDrs7jsoIHsnLzroZwg7Iio7Ja0IOyeiOqzoCwg6rKp7J6Q6rCAIO2ZlOuptOyXkCDr' +
+  'k6TslrTsmZTsnYQg65WMCiAg67aA66qo7JeQIC5jZWxscy1pbiDsnbQg67aZ7Jy866m07IScIOyInOyEnOuMgOuhnCDrgpjtg4Drgpzri6QuCiAgKO2OmOyd' +
+  'tOyngCDsl7TrprQg65WMIO2VnCDrsojsl5Ag7J6s7IOd7ZWY66m0IOyVhOuemOyqvSDqsKTrn6zrpqzripQg64+E7LCpIOyghOyXkCDrgZ3rgpgg67KE66aw' +
+  '64ukKQoqLwouZ2FsbGVyeS1jZWxsIHsKICBvcGFjaXR5OiAwOwp9CgouY2VsbHMtaW4gLmdhbGxlcnktY2VsbCB7CiAgYW5pbWF0aW9uOiBjZWxsLWluIDAu' +
+  'NXMgZWFzZS1vdXQgZm9yd2FyZHM7Cn0KCi8qIO2ZleuMgCDrs7TquLAgKi8KQGtleWZyYW1lcyBsaWdodGJveC1pbiB7CiAgZnJvbSB7CiAgICBvcGFjaXR5' +
+  'OiAwOwogIH0KICB0byB7CiAgICBvcGFjaXR5OiAxOwogIH0KfQoubGlnaHRib3ggewogIGFuaW1hdGlvbjogbGlnaHRib3gtaW4gMC4yNXMgZWFzZS1vdXQ7' +
+  'Cn0KQGtleWZyYW1lcyBsaWdodGJveC1pbWFnZS1pbiB7CiAgZnJvbSB7CiAgICBvcGFjaXR5OiAwOwogICAgdHJhbnNmb3JtOiBzY2FsZSgwLjk2KTsKICB9' +
+  'CiAgdG8gewogICAgb3BhY2l0eTogMTsKICAgIHRyYW5zZm9ybTogbm9uZTsKICB9Cn0KLmxpZ2h0Ym94LWltYWdlIHsKICBhbmltYXRpb246IGxpZ2h0Ym94' +
+  'LWltYWdlLWluIDAuM3MgY3ViaWMtYmV6aWVyKDAuMjIsIDAuNjEsIDAuMzYsIDEpOwp9CgovKgogIOuqqOyFmCDstZzshoztmZQg7ISk7KCVKGlPUyAn64+Z' +
+  '7J6RIOykhOydtOq4sCcgwrcg7KCA7KCE66ClIOuqqOuTnCwgQW5kcm9pZCAn7JWg64uI66mU7J207IWYIOygnOqxsCcp7J28IOuVjC4KCiAg7JiI7KCE7JeQ' +
+  '64qUIOyVoOuLiOuplOydtOyFmOydhCDsoITrtoAg6ruQ7KeA66eMLCDqt7jrn6zrqbQg7IOB64u57IiYIO2VmOqwneyXkOqyjCDtmqjqs7zqsIAg7JWE7JiI' +
+  'IOyViCDrs7TsmIDri6QuCiAgKGlPUyDripQg67Cw7YSw66as6rCAIOuCruyVhCDsoIDsoITroKUg66qo65Oc6rCAIOy8nOyngOuptCDsnbQg7ISk7KCV7J2E' +
+  'IOyekOuPmeycvOuhnCDtmZzshLHtmZTtlZzri6QuKQoKICDqt7jrnpjshJwg7KeA6riI7J2AIOuBhOyngCDslYrqs6AgIuu2gOuTnOufveqyjCIg66eM65Og' +
+  '64ukLgogIC0g7Y6Y7J2065OcKO2IrOuqheuPhCnripQg6re464yA66GcIOuRlOuLpCDigJQg7Ja07KeA65+87Kad7J2EIOycoOuwnO2VmOyngCDslYrripTr' +
+  'i6QuCiAgLSDsnITslYTrnpjroZwg67CA66CkIOyYrOudvOyYpOqxsOuCmCDtmZXrjIDrkJjripQgJ+ybgOyngeyehCfrp4wg7JeG7JWk64ukLgogIC0g6rOE' +
+  '7IaNIOuwmOuzteuQmOuKlCDslaDri4jrqZTsnbTshZgo7Iqk7YGs66GkIO2ZlOyCtO2RnCwg7LyE67KI7KaIKeunjCDsoJXsp4Dsi5ztgqjri6QuCiAgICDr' +
+  'sJjrs7Ug66qo7IWY7J20IOupgOuvuOulvCDsnKDrsJztlZjripQg7KO867KU7J206528IOydtOqxtCDsnKDsp4DtlZjripQg6rKMIOunnuuLpC4KKi8KQG1l' +
+  'ZGlhIChwcmVmZXJzLXJlZHVjZWQtbW90aW9uOiByZWR1Y2UpIHsKICAvKiDrsJjrs7XrkJjripQg7JuA7KeB7J6E7J2AIOygleyngCAqLwogIC5hbmltYXRl' +
+  'LWJvdW5jZS1zbG93LAogIC5hbmltYXRlLWtlbi1idXJucyB7CiAgICBhbmltYXRpb246IG5vbmU7CiAgfQoKICAvKiDtlZwg67KI66eMIOyerOyDneuQmOuK' +
+  'lCDrk7HsnqUg7Zqo6rO864qUIOyCtOumrOuQmCwg7J2064+ZIOyXhuydtCDtjpjsnbTrk5zrp4wgKi8KICAucmV2ZWFsIHsKICAgIHRyYW5zZm9ybTogbm9u' +
+  'ZTsKICAgIHRyYW5zaXRpb246IG9wYWNpdHkgMC44cyBlYXNlOwogIH0KICAucmV2ZWFsLmlzLXZpc2libGUgewogICAgb3BhY2l0eTogMTsKICB9CgogIC5j' +
+  'ZWxscy1pbiAuZ2FsbGVyeS1jZWxsIHsKICAgIGFuaW1hdGlvbjogZmFkZS1vbmx5IDAuNXMgZWFzZS1vdXQgZm9yd2FyZHM7CiAgfQogIC5saWdodGJveC1p' +
+  'bWFnZSB7CiAgICBhbmltYXRpb246IGZhZGUtb25seSAwLjNzIGVhc2Utb3V0OwogIH0KfQoKQGtleWZyYW1lcyBmYWRlLW9ubHkgewogIGZyb20gewogICAg' +
+  'b3BhY2l0eTogMDsKICB9CiAgdG8gewogICAgb3BhY2l0eTogMTsKICB9Cn0KCi8qIO2CpOuztOuTnCDtj6zsu6TsiqTripQg7ZWt7IOBIOuztOydtOqyjCAq' +
+  'Lwo6Zm9jdXMtdmlzaWJsZSB7CiAgb3V0bGluZTogMnB4IHNvbGlkIHZhcigtLWMtYWNjZW50KTsKICBvdXRsaW5lLW9mZnNldDogMnB4Owp9Cg=='
+)
+
+
+Write-Host ''
+$ok1 = Select-String -Path 'src\components\common\GreetingSection.jsx' -Pattern 'splitOrder' -Quiet
+$ok2 = Select-String -Path 'src\styles\globals.css' -Pattern 'scrollbar-gutter' -Quiet
+
+if ($ok1) { Write-Host '  [OK] 인사말 5열 정렬' -ForegroundColor Green } else { Write-Host '  [실패] 인사말 5열 정렬' -ForegroundColor Red }
+if ($ok2) { Write-Host '  [OK] 스크롤바 자리 확보' -ForegroundColor Green } else { Write-Host '  [실패] 스크롤바 자리 확보' -ForegroundColor Red }
+
+Write-Host ''
+Write-Host '개발 서버를 껐다가 다시 켜세요 (Ctrl+C 후 npm run dev).' -ForegroundColor Cyan

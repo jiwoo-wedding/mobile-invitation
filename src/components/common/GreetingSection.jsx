@@ -6,24 +6,51 @@ import { withDeceased } from '../../lib/format';
 export default function GreetingSection({ view }) {
   const { groom, bride } = CONFIG.couple;
 
-  const parentLine = (side, child) => (
-    <p>
-      <span className="font-semibold">
-        {withDeceased(side.father, side.fatherDeceased)} ·{' '}
-        {withDeceased(side.mother, side.motherDeceased)}
-      </span>{' '}
-      의 {side.order} <span className="font-bold text-accent">{child}</span>
-    </p>
-  );
+  /*
+    한 줄로 이어 쓰면 '첫째 아들'(4자)과 '둘째 딸'(3자)의 길이 차이만큼
+    신랑 이름과 신부 이름이 서로 어긋난다.
+    그래서 다섯 개의 열로 나눈다.
+
+      장재필 · 최미순 │ 의 │ 첫째 │ 아들 │ 장성빈
+      엄길용 · 조영순 │ 의 │ 둘째 │   딸 │ 엄지우
+
+    '아들 / 딸' 열은 오른쪽 정렬이라 글자 수가 달라도 이름 앞이 가지런하다.
+  */
+
+  /** '첫째 아들' → ['첫째', '아들'] / '장남' → ['', '장남'] */
+  const splitOrder = (order = '') => {
+    const parts = order.trim().split(/\s+/);
+    if (parts.length < 2) return ['', parts[0] ?? ''];
+    return [parts.slice(0, -1).join(' '), parts[parts.length - 1]];
+  };
+
+  const rows = [
+    { side: groom, name: groom.name },
+    { side: bride, name: bride.name },
+  ];
 
   return (
     <section className="px-5 py-8 text-center font-batang">
       <div className="space-y-6 rounded-2xl border border-line/30 bg-surface/40 p-8 backdrop-blur-sm">
         <div className="text-xs tracking-[0.3em] text-accent">{view.greetingTitle}</div>
 
-        <div className="space-y-1 text-sm text-ink/90">
-          {parentLine(groom, groom.name)}
-          {parentLine(bride, bride.name)}
+        <div className="mx-auto grid w-fit grid-cols-[auto_auto_auto_auto_auto] items-baseline gap-x-1.5 gap-y-1.5 text-sm">
+          {rows.map(({ side, name }) => {
+            const [ordinal, kind] = splitOrder(side.order);
+
+            return (
+              <React.Fragment key={name}>
+                <span className="whitespace-nowrap text-right font-semibold text-ink/90">
+                  {withDeceased(side.father, side.fatherDeceased)} ·{' '}
+                  {withDeceased(side.mother, side.motherDeceased)}
+                </span>
+                <span className="text-muted">의</span>
+                <span className="whitespace-nowrap text-left text-muted">{ordinal}</span>
+                <span className="whitespace-nowrap text-right text-muted">{kind}</span>
+                <span className="whitespace-nowrap text-left font-bold text-accent">{name}</span>
+              </React.Fragment>
+            );
+          })}
         </div>
 
         <div className="py-2 text-accent" aria-hidden="true">
