@@ -59,6 +59,10 @@ body {
   scrollbar-gutter: stable;
 }
 
+#root {
+  width: 100%;
+}
+
 /* 모바일 청첩장 본체: 최대 480px, 항상 중앙 정렬 */
 .mobile-container {
   width: 100%;
