@@ -4,6 +4,7 @@ import { X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, MapPin } from 'lucide-re
 import { galleryGroups, galleryImages } from '../../lib/assets';
 import { CONFIG } from '../../config/invitationConfig';
 import SectionTitle from './SectionTitle';
+import { useInView } from '../../hooks/useInView';
 
 const MAX_ZOOM = 4;
 const ZOOM_STEP = 0.5;
@@ -239,86 +240,104 @@ export default function GallerySection() {
       <SectionTitle label="GALLERY" sub="사진을 누르면 크게 보실 수 있습니다" />
 
       <div className="space-y-8">
-        {blocks.map((group) => {
-          const limit = shown[group.folder] ?? step;
-          const visible = group.images.slice(0, limit);
-          const remaining = group.images.length - limit;
-
-          return (
-            <div key={group.folder}>
-              {/* 장소 제목이 곧 구글 지도 링크 */}
-              <div className="mb-3">
-                <h3 className="font-batang text-base font-bold text-accent">
-                  {group.mapUrl ? (
-                    <a
-                      href={group.mapUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      aria-label={`${group.title} 구글 지도에서 보기`}
-                      className="inline-flex items-baseline gap-1.5 underline decoration-accent/40 decoration-1 underline-offset-4 transition-colors hover:decoration-accent"
-                    >
-                      {group.title}
-                      <MapPin size={13} className="translate-y-px opacity-70" aria-hidden="true" />
-                    </a>
-                  ) : (
-                    group.title
-                  )}
-                </h3>
-
-                {group.caption && <p className="mt-1 text-[11px] text-muted">{group.caption}</p>}
-              </div>
-
-              {/* 가로 3열 격자 */}
-              <div className="grid grid-cols-3 gap-1.5">
-                {visible.map((src, i) => (
-                  <button
-                    key={src}
-                    onClick={() => setIndex(group.offset + i)}
-                    aria-label={`${group.title} ${i + 1}번째 사진 크게 보기`}
-                    className="gallery-cell group aspect-square overflow-hidden rounded-md border border-line/20"
-                    style={{ animationDelay: `${(i % step) * 45}ms` }}
-                  >
-                    <img
-                      src={src}
-                      alt=""
-                      loading="lazy"
-                      decoding="async"
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110 group-active:scale-105"
-                    />
-                  </button>
-                ))}
-              </div>
-
-              {remaining > 0 && (
-                <button
-                  onClick={() =>
-                    setShown((prevShown) => ({
-                      ...prevShown,
-                      [group.folder]: (prevShown[group.folder] ?? step) + step,
-                    }))
-                  }
-                  className="mt-3 w-full rounded-xl border border-line/40 py-2.5 text-xs font-bold text-accent transition-colors hover:bg-accent/10"
-                >
-                  {group.title} 사진 더 보기 ({remaining}장)
-                </button>
-              )}
-
-              {remaining <= 0 && group.images.length > step && (
-                <button
-                  onClick={() =>
-                    setShown((prevShown) => ({ ...prevShown, [group.folder]: step }))
-                  }
-                  className="mt-3 w-full rounded-xl border border-line/20 py-2.5 text-[11px] text-muted"
-                >
-                  접기
-                </button>
-              )}
-            </div>
-          );
-        })}
+        {blocks.map((group) => (
+          <GalleryGroupBlock
+            key={group.folder}
+            group={group}
+            step={step}
+            limit={shown[group.folder] ?? step}
+            onOpen={setIndex}
+            onExpand={() =>
+              setShown((prevShown) => ({
+                ...prevShown,
+                [group.folder]: (prevShown[group.folder] ?? step) + step,
+              }))
+            }
+            onCollapse={() => setShown((prevShown) => ({ ...prevShown, [group.folder]: step }))}
+          />
+        ))}
       </div>
 
       {lightbox}
     </section>
+  );
+}
+
+/**
+ * 장소 하나의 블록.
+ * 격자가 화면에 들어오는 순간부터 칸이 순서대로 나타난다.
+ */
+function GalleryGroupBlock({ group, step, limit, onOpen, onExpand, onCollapse }) {
+  const [gridRef, inView] = useInView();
+
+  const visible = group.images.slice(0, limit);
+  const remaining = group.images.length - limit;
+
+  return (
+    <div>
+      {/* 장소 제목이 곧 구글 지도 링크 */}
+      <div className="mb-3">
+        <h3 className="font-batang text-base font-bold text-accent">
+          {group.mapUrl ? (
+            <a
+              href={group.mapUrl}
+              target="_blank"
+              rel="noreferrer"
+              aria-label={`${group.title} 구글 지도에서 보기`}
+              className="inline-flex items-baseline gap-1.5 underline decoration-accent/40 decoration-1 underline-offset-4 transition-colors hover:decoration-accent"
+            >
+              {group.title}
+              <MapPin size={13} className="translate-y-px opacity-70" aria-hidden="true" />
+            </a>
+          ) : (
+            group.title
+          )}
+        </h3>
+
+        {group.caption && <p className="mt-1 text-[11px] text-muted">{group.caption}</p>}
+      </div>
+
+      {/* 가로 3열 격자 — 화면에 들어오면 칸이 순서대로 나타난다 */}
+      <div
+        ref={gridRef}
+        className={`grid grid-cols-3 gap-1.5 ${inView ? 'cells-in' : ''}`}
+      >
+        {visible.map((src, i) => (
+          <button
+            key={src}
+            onClick={() => onOpen(group.offset + i)}
+            aria-label={`${group.title} ${i + 1}번째 사진 크게 보기`}
+            className="gallery-cell group aspect-square overflow-hidden rounded-md border border-line/20"
+            style={{ animationDelay: `${i * 60}ms` }}
+          >
+            <img
+              src={src}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110 group-active:scale-105"
+            />
+          </button>
+        ))}
+      </div>
+
+      {remaining > 0 && (
+        <button
+          onClick={onExpand}
+          className="mt-3 w-full rounded-xl border border-line/40 py-2.5 text-xs font-bold text-accent transition-colors hover:bg-accent/10"
+        >
+          {group.title} 사진 더 보기 ({remaining}장)
+        </button>
+      )}
+
+      {remaining <= 0 && group.images.length > step && (
+        <button
+          onClick={onCollapse}
+          className="mt-3 w-full rounded-xl border border-line/20 py-2.5 text-[11px] text-muted"
+        >
+          접기
+        </button>
+      )}
+    </div>
   );
 }

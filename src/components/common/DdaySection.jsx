@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { CONFIG } from '../../config/invitationConfig';
 import { weddingDate, formatFullDate, formatTime } from '../../lib/format';
 import SectionTitle from './SectionTitle';
+import WeddingCalendar from './WeddingCalendar';
 import { showsTime, showsCountdownDetail } from '../../lib/visibility';
 
 /** 남은 시간을 {일, 시, 분, 초, 지남} 으로 계산 */
@@ -55,7 +56,9 @@ export default function DdaySection({ view }) {
         sub={showsTime(view) ? `${formatFullDate()} ${formatTime()}` : formatFullDate()}
       />
 
-      <div className={detailed ? 'grid grid-cols-4 gap-2' : 'flex justify-center'}>
+      <WeddingCalendar />
+
+      <div className={`mt-4 ${detailed ? 'grid grid-cols-4 gap-2' : 'flex justify-center'}`}>
         {units.map((unit) => (
           <div
             key={unit.label}

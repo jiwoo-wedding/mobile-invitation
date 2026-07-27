@@ -205,8 +205,16 @@ body {
     transform: none;
   }
 }
+/*
+  갤러리 칸은 기본적으로 숨어 있고, 격자가 화면에 들어왔을 때
+  부모에 .cells-in 이 붙으면서 순서대로 나타난다.
+  (페이지 열릴 때 한 번에 재생하면 아래쪽 갤러리는 도착 전에 끝나 버린다)
+*/
 .gallery-cell {
   opacity: 0;
+}
+
+.cells-in .gallery-cell {
   animation: cell-in 0.5s ease-out forwards;
 }
 
@@ -264,7 +272,7 @@ body {
     opacity: 1;
   }
 
-  .gallery-cell {
+  .cells-in .gallery-cell {
     animation: fade-only 0.5s ease-out forwards;
   }
   .lightbox-image {

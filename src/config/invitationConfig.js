@@ -106,7 +106,7 @@ export const CONFIG = {
   //   'random'                      갤러리 전체에서 무작위 — 열 때마다 바뀝니다
   //   'random:Trappist Monastery'   그 폴더 안에서만 무작위
   // 파일명이 안 맞으면 갤러리 첫 장이 대신 쓰이고, 개발 중에는 콘솔(F12)에 경고가 찍힙니다.
-  mainPhoto: 'trappi12.jpg',
+  mainPhoto: 'hachi02.jpg',
 
   // 대표 사진에서 화면에 보여줄 부분. 'X% Y%' 형식, 기본 가운데는 '50% 50%'.
   // ⚠️ mainPhoto 를 'random' 으로 두면 사진마다 구도가 달라서 이 값이 잘 맞지 않습니다.
