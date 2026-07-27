@@ -21,14 +21,29 @@ function getRemaining(target) {
   };
 }
 
+function daysUntilWedding() {
+  const target = weddingDate();
+  const targetMidnight = new Date(target.getFullYear(), target.getMonth(), target.getDate());
+
+  const now = new Date();
+  const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  const MS_PER_DAY = 24 * 60 * 60 * 1000;
+  return Math.round((targetMidnight - todayMidnight) / MS_PER_DAY);
+}
+/**
+ * 오늘부터 예식일까지 며칠 남았는지. 시각은 무시하고 날짜만 센다.
+ * getRemaining 은 예식 시각까지의 시간을 재기 때문에, 그 값으로 날짜를 세면
+ * 하루가 안 되는 조각이 버려져 달력으로 세는 것보다 하루 적게 나온다.
+ */
+
 export default function DdaySection({ view }) {
   const target = weddingDate();
   const [remaining, setRemaining] = useState(() => getRemaining(target));
 
   useEffect(() => {
-    // 1초마다 실제 현재 시각과 비교해 다시 계산한다.
-    // (직접 빼는 방식이 아니라 매번 Date.now() 로 재계산하므로
-    //  탭이 백그라운드로 갔다 와도, 자정을 넘겨도 값이 정확하다.)
+    // 1분마다 현재 시각과 비교해 다시 계산한다.
+    // 자정을 넘기면 남은 일수가, 예식 시각을 지나면 지난 예식 문구로 자동 갱신된다.
     const timer = setInterval(() => {
       setRemaining(getRemaining(target));
     }, 60000);
@@ -37,7 +52,7 @@ export default function DdaySection({ view }) {
   }, [CONFIG.wedding.date, CONFIG.wedding.time]);
 
   const { groom, bride } = CONFIG.couple;
-  // 외부 알림용은 남은 날짜만, 내빈용은 시·분·초까지 보여준다
+  const daysLeft = daysUntilWedding();
 
   return (
     <section className="px-5 py-6">
@@ -51,7 +66,9 @@ export default function DdaySection({ view }) {
       <p className="mt-5 text-center text-sm text-muted">
         {remaining.passed
           ? `${groom.name}, ${bride.name}의 결혼식이 있었습니다. 함께해 주셔서 감사합니다.`
-          : `${groom.name} ♥ ${bride.name}의 결혼식이 ${remaining.days}일 남았습니다.`}
+          : daysLeft === 0
+            ? `${groom.name} ♥ ${bride.name}의 결혼식이 오늘입니다.`
+            : `${groom.name} ♥ ${bride.name}의 결혼식이 ${daysLeft}일 남았습니다.`}
       </p>
     </section>
   );
