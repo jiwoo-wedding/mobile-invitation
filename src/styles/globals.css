@@ -36,8 +36,6 @@ body {
   background-color: var(--c-page);
   font-family: 'Noto Sans KR', sans-serif;
   color: var(--c-text);
-  display: flex;
-  justify-content: center;
   min-height: 100svh;
   transition: background-color 0.4s ease;
 
@@ -51,10 +49,15 @@ body {
   scrollbar-gutter: stable;
 }
 
+#root {
+  width: 100%;
+}
+
 /* 모바일 청첩장 본체: 최대 480px, 항상 중앙 정렬 */
 .mobile-container {
-  width: 100%;
+  width: min(100%, var(--container-max));
   max-width: var(--container-max);
+  margin: 0 auto;
   min-height: 100svh;
   background-color: var(--c-bg);
   box-shadow: 0 0 30px rgb(0 0 0 / 0.5);
