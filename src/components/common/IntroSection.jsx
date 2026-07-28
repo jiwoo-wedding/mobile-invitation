@@ -5,9 +5,9 @@ import { formatFullDate, formatTime } from '../../lib/format';
 import { showsTime } from '../../lib/visibility';
 
 /* 확대 구간과 속도 — 여기 숫자만 바꾸면 됩니다 */
-const ZOOM_FROM = 1.15; // 처음 구도
-const ZOOM_TO = 1.4; // 끝 구도
-const ZOOM_SECONDS = 12; // 걸리는 시간
+const ZOOM_FROM = 1.18; // 처음 구도
+const ZOOM_TO = 1.32; // 끝 구도
+const ZOOM_SECONDS = 25; // 걸리는 시간
 
 /**
  * 첫 화면 — 대표 사진 위에 이름과 날짜를 올린다.
@@ -24,9 +24,7 @@ export default function IntroSection({ view }) {
   const [zoomed, setZoomed] = useState(false);
 
   // 모션 최소화 설정이면 움직임 없이 고정된 구도로 보여준다
-  const reduceMotion =
-    typeof window !== 'undefined' &&
-    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  const reduceMotion = false; // 임시 진단용
 
   const start = () => {
     setLoaded(true);
