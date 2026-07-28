@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, MapPin } from 'lucide-react';
 import { galleryGroups, galleryImages } from '../../lib/assets';
@@ -6,7 +6,7 @@ import { CONFIG } from '../../config/invitationConfig';
 import SectionTitle from './SectionTitle';
 import { useInView } from '../../hooks/useInView';
 
-const MAX_ZOOM = 2.5;
+const MAX_ZOOM = 2;
 const ZOOM_STEP = 0.1;
 
 export default function GallerySection() {
@@ -33,6 +33,7 @@ export default function GallerySection() {
   const dragRef = useRef(null);   // 확대 후 마우스로 끌어 옮길 때의 시작 지점
 
   // 터치 처리는 네이티브 리스너로 붙이므로, 최신 zoom 값을 ref 로 따로 들고 있는다
+  const pendingScrollRef = useRef(null); // 배율 변경 직후 맞출 스크롤 위치
   const zoomRef = useRef(1);
   useEffect(() => {
     zoomRef.current = zoom;
@@ -71,16 +72,28 @@ export default function GallerySection() {
     const nextLeft = (el.scrollLeft + px) * ratio - px;
     const nextTop = (el.scrollTop + py) * ratio - py;
 
-    setZoom(target);
+    /*
+      스크롤은 화면에 그려지기 직전(useLayoutEffect)에 맞춘다.
+      requestAnimationFrame 으로 미루면 새 크기와 옛 스크롤 위치가
+      한 프레임 동안 함께 보여서 화면이 튄다.
+    */
+    pendingScrollRef.current = { left: nextLeft, top: nextTop };
 
-    // 새 크기가 적용된 다음 프레임에 스크롤을 옮긴다
-    requestAnimationFrame(() => {
-      const node = scrollRef.current;
-      if (!node) return;
-      node.scrollLeft = nextLeft;
-      node.scrollTop = nextTop;
-    });
+    // ref 도 즉시 갱신한다. 핀치처럼 연속 호출될 때
+    // 다음 계산이 옛 배율을 기준으로 하지 않도록.
+    zoomRef.current = target;
+    setZoom(target);
   };
+
+  /* 배율이 바뀐 직후, 브라우저가 그리기 전에 스크롤을 맞춘다 */
+  useLayoutEffect(() => {
+    const pending = pendingScrollRef.current;
+    if (!pending || !scrollRef.current) return;
+
+    scrollRef.current.scrollLeft = pending.left;
+    scrollRef.current.scrollTop = pending.top;
+    pendingScrollRef.current = null;
+  }, [zoom]);
 
   // zoom 대신 zoomRef 를 쓰는 이유: 키보드 핸들러가 useEffect 안에 등록돼
   // 오래된 zoom 값을 붙잡고 있을 수 있다. ref 는 항상 최신값이다.
@@ -91,6 +104,7 @@ export default function GallerySection() {
   useEffect(() => {
     setZoom(1);
     setNatural(null);
+    pendingScrollRef.current = null;
     if (scrollRef.current) scrollRef.current.scrollTo(0, 0);
   }, [index]);
 
