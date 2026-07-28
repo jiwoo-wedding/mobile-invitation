@@ -18,10 +18,21 @@ export default function IntroSection({ view }) {
   */
   const [loaded, setLoaded] = useState(false);
 
+  const imgRef = React.useRef(null);
+
+  /*
+    캐시에 이미 있는 사진은 React 가 붙기 전에 로딩이 끝나 onLoad 가 오지 않는다.
+    그러면 loaded 가 false 로 남아 사진이 계속 숨겨진다. 마운트 시 한 번 확인한다.
+  */
+  React.useEffect(() => {
+    if (imgRef.current?.complete) setLoaded(true);
+  }, []);
+
   return (
     <section className="relative flex aspect-[3/4] max-h-[100svh] min-h-[520px] w-full flex-col items-center justify-between overflow-hidden bg-bg text-center">
       {mainImage && (
         <img
+          ref={imgRef}
           src={mainImage}
           alt="신랑 신부 대표 사진"
           onLoad={() => setLoaded(true)}
