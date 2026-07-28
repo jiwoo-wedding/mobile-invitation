@@ -292,10 +292,6 @@ body {
     반복 모션이 멀미를 유발하는 주범이라 이건 유지하는 게 맞다.
 */
 @media (prefers-reduced-motion: reduce) {
-  /* 반복되는 움직임은 정지 */
-  .animate-bounce-slow {
-    animation: none;
-  }
 
   /* 대표 사진은 움직임만 멈추고, 확대된 구도와 페이드는 유지한다 */
   .animate-ken-burns {
