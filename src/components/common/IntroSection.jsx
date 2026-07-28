@@ -3,6 +3,7 @@ import { CONFIG } from '../../config/invitationConfig';
 import { mainImage } from '../../lib/assets';
 import { formatFullDate, formatTime } from '../../lib/format';
 import { showsTime } from '../../lib/visibility';
+import React, { useState } from 'react';
 
 /**
  * 첫 화면 — 대표 사진 위에 이름과 날짜를 올린다.
@@ -10,14 +11,20 @@ import { showsTime } from '../../lib/visibility';
  */
 export default function IntroSection({ view }) {
   const { groom, bride } = CONFIG.couple;
+  const [loaded, setLoaded] = useState(false);
 
   return (
-    <section className="relative flex aspect-[3/4] max-h-[100svh] min-h-[520px] w-full flex-col items-center justify-between overflow-hidden text-center">
+    <section className="relative flex aspect-[3/4] max-h-[100svh] min-h-[520px] w-full flex-col items-center justify-between overflow-hidden text-center" bg-bg>
       {mainImage && (
         <img
           src={mainImage}
           alt="신랑 신부 대표 사진"
-          className="animate-ken-burns absolute inset-0 z-0 h-full w-full object-cover"
+          onLoad={() => setLoaded(true)}
+          decoding="async"
+          fetchPriority="high"
+          className={`absolute inset-0 z-0 h-full w-full object-cover ${
+            loaded ? 'animate-ken-burns' : 'opacity-0'
+          }`}
           style={{ objectPosition: CONFIG.mainPhotoPosition ?? '50% 50%' }}
         />
       )}
