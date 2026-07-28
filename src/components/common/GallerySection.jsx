@@ -190,7 +190,17 @@ export default function GallerySection() {
       }
     };
 
+    /*
+      iOS Safari 는 두 손가락 제스처에 gesturechange 와 touchmove 를 모두 발생시킨다.
+      둘 다 배율을 바꾸면 같은 프레임에 zoomTo 가 두 번 불리고,
+      두 번째 호출은 이미 갱신된 배율을 기준으로 계산해 보정량이 0 이 된다.
+      그래서 기준점이 무시되고 왼쪽 위를 축으로 커진다.
+      Safari 에서는 gesture* 쪽만 쓰고 여기서는 빠진다.
+    */
+    const hasGestureEvents = typeof window !== 'undefined' && 'ongesturestart' in window;
+
     const onTouchMove = (e) => {
+      if (hasGestureEvents) return;
       if (e.touches.length !== 2 || !pinchRef.current) return;
 
       e.preventDefault(); // 확대 중 화면이 같이 움직이지 않도록
@@ -237,6 +247,13 @@ export default function GallerySection() {
 
     const onGestureChange = (e) => {
       e.preventDefault();
+
+      // 제스처 도중 손가락이 움직이면 기준점도 따라간다
+      if (typeof e.clientX === 'number') {
+        gestureAnchor.x = e.clientX;
+        gestureAnchor.y = e.clientY;
+      }
+
       const next = gestureStartZoom.value * e.scale;
       zoomTo(next < 1.05 ? 1 : next, gestureAnchor);
     };
