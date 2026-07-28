@@ -6,7 +6,7 @@ import { CONFIG } from '../../config/invitationConfig';
 import SectionTitle from './SectionTitle';
 import { useInView } from '../../hooks/useInView';
 
-const MAX_ZOOM = 2;
+const MAX_ZOOM = 2.5;
 const ZOOM_STEP = 0.1;
 
 export default function GallerySection() {
@@ -42,8 +42,50 @@ export default function GallerySection() {
   const prev = () => setIndex((i) => (i - 1 + images.length) % images.length);
   const next = () => setIndex((i) => (i + 1) % images.length);
 
-  const zoomIn = () => setZoom((z) => Math.min(MAX_ZOOM, z + ZOOM_STEP));
-  const zoomOut = () => setZoom((z) => Math.max(1, z - ZOOM_STEP));
+  /*
+    기준점을 유지하며 배율을 바꾼다.
+
+    그냥 배율만 올리면 스크롤 위치가 그대로라 시선이 왼쪽 위로 쏠린다.
+    확대 전에 '기준점이 콘텐츠 안의 어느 지점인지' 비율로 기억해 두고,
+    확대 후 그 지점이 화면상 같은 자리에 오도록 스크롤을 다시 맞춘다.
+
+    point 는 화면 좌표 { x, y }. 없으면 보고 있는 영역의 한가운데를 쓴다.
+  */
+  const zoomTo = (nextZoom, point) => {
+    const el = scrollRef.current;
+    const target = Math.min(MAX_ZOOM, Math.max(1, nextZoom));
+
+    if (!el) {
+      setZoom(target);
+      return;
+    }
+
+    const rect = el.getBoundingClientRect();
+
+    // 기준점 (요소 안에서의 위치)
+    const px = point ? point.x - rect.left : rect.width / 2;
+    const py = point ? point.y - rect.top : rect.height / 2;
+
+    // 그 지점이 콘텐츠 전체에서 차지하는 비율
+    const ratio = target / zoomRef.current;
+    const nextLeft = (el.scrollLeft + px) * ratio - px;
+    const nextTop = (el.scrollTop + py) * ratio - py;
+
+    setZoom(target);
+
+    // 새 크기가 적용된 다음 프레임에 스크롤을 옮긴다
+    requestAnimationFrame(() => {
+      const node = scrollRef.current;
+      if (!node) return;
+      node.scrollLeft = nextLeft;
+      node.scrollTop = nextTop;
+    });
+  };
+
+  // zoom 대신 zoomRef 를 쓰는 이유: 키보드 핸들러가 useEffect 안에 등록돼
+  // 오래된 zoom 값을 붙잡고 있을 수 있다. ref 는 항상 최신값이다.
+  const zoomIn = (point) => zoomTo(zoomRef.current + ZOOM_STEP, point);
+  const zoomOut = (point) => zoomTo(zoomRef.current - ZOOM_STEP, point);
 
   // 사진을 바꾸면 확대 배율과 스크롤 위치를 초기화한다
   useEffect(() => {
@@ -117,6 +159,12 @@ export default function GallerySection() {
         touches[0].clientY - touches[1].clientY
       );
 
+    /** 두 손가락의 중간 지점 (화면 좌표) */
+    const midpoint = (touches) => ({
+      x: (touches[0].clientX + touches[1].clientX) / 2,
+      y: (touches[0].clientY + touches[1].clientY) / 2,
+    });
+
     const onTouchStart = (e) => {
       if (e.touches.length === 2) {
         // 확대 시작 — 스와이프는 취소한다
@@ -137,7 +185,8 @@ export default function GallerySection() {
       const next = pinchRef.current.startZoom * ratio;
 
       // 1 에 가까우면 원본으로 붙여 준다 (손을 떼기 전에 화면이 흔들리지 않게)
-      setZoom(Math.min(MAX_ZOOM, Math.max(1, next < 1.05 ? 1 : next)));
+      // 두 손가락 사이를 기준으로 삼아, 벌리는 지점이 화면에 그대로 남게 한다
+      zoomTo(next < 1.05 ? 1 : next, midpoint(e.touches));
     };
 
     const onTouchEnd = (e) => {
@@ -163,15 +212,19 @@ export default function GallerySection() {
     */
     const gestureStartZoom = { value: 1 };
 
+    const gestureAnchor = { x: 0, y: 0 };
+
     const onGestureStart = (e) => {
       e.preventDefault();
       gestureStartZoom.value = zoomRef.current;
+      gestureAnchor.x = e.clientX ?? window.innerWidth / 2;
+      gestureAnchor.y = e.clientY ?? window.innerHeight / 2;
     };
 
     const onGestureChange = (e) => {
       e.preventDefault();
       const next = gestureStartZoom.value * e.scale;
-      setZoom(Math.min(MAX_ZOOM, Math.max(1, next < 1.05 ? 1 : next)));
+      zoomTo(next < 1.05 ? 1 : next, gestureAnchor);
     };
 
     const onGestureEnd = (e) => e.preventDefault();
@@ -241,8 +294,11 @@ export default function GallerySection() {
   const onWheel = (e) => {
     if (!e.ctrlKey && Math.abs(e.deltaY) < 4) return;
     e.preventDefault();
-    if (e.deltaY < 0) zoomIn();
-    else zoomOut();
+
+    // 커서가 가리키는 지점을 기준으로 확대·축소한다
+    const point = { x: e.clientX, y: e.clientY };
+    if (e.deltaY < 0) zoomIn(point);
+    else zoomOut(point);
   };
 
   const iconButton =
@@ -336,7 +392,7 @@ export default function GallerySection() {
               setNatural({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })
             }
             onClick={(e) => e.stopPropagation()}
-            onDoubleClick={() => setZoom((z) => (z === 1 ? 2 : 1))}
+            onDoubleClick={(e) => zoomTo(zoom === 1 ? 2 : 1, { x: e.clientX, y: e.clientY })}
             draggable={false}
             className={
               displaySize
@@ -395,7 +451,7 @@ export default function GallerySection() {
 
         <div className="fixed bottom-5 left-1/2 flex max-w-[calc(100vw-1rem)] -translate-x-1/2 items-center gap-1.5">
           <button
-            onClick={zoomOut}
+            onClick={() => zoomOut()}
             disabled={zoom <= 1}
             aria-label="축소"
             className={`${iconButton} size-10`}
@@ -409,7 +465,7 @@ export default function GallerySection() {
           </p>
 
           <button
-            onClick={zoomIn}
+            onClick={() => zoomIn()}
             disabled={zoom >= MAX_ZOOM}
             aria-label="확대"
             className={`${iconButton} size-10`}
