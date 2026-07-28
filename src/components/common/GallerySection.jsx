@@ -1,111 +1,124 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, MapPin } from 'lucide-react';
 import { galleryGroups, galleryImages } from '../../lib/assets';
 import { CONFIG } from '../../config/invitationConfig';
-import SectionTitle from './SectionTitle';
 import { useInView } from '../../hooks/useInView';
+import SectionTitle from './SectionTitle';
 
 const MAX_ZOOM = 2;
 const ZOOM_STEP = 0.1;
+const SWIPE_THRESHOLD = 50;
+
+const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
 export default function GallerySection() {
   const groups = galleryGroups;
   const images = galleryImages; // 그룹 순서대로 이어붙인 전체 목록
   const step = CONFIG.gallery.initialCount;
 
-  // 그룹마다 몇 장까지 펼쳤는지 따로 기억한다. { 'Hachiman Zaka': 6, ... }
+  // 그룹마다 몇 장까지 펼쳤는지 따로 기억한다
   const [shown, setShown] = useState(() =>
     Object.fromEntries(groups.map((g) => [g.folder, step]))
   );
 
   const [index, setIndex] = useState(null); // null 이면 확대 보기 닫힘
   const [zoom, setZoom] = useState(1);
+  const [offset, setOffset] = useState({ x: 0, y: 0 }); // 화면 중심에서 밀어낸 거리(px)
+  const [natural, setNatural] = useState(null); // 사진 원본 픽셀 { w, h }
+  const [viewport, setViewport] = useState({ w: 0, h: 0 }); // 보기 영역
 
-  // 배율 100% = '화면에 꽉 차게 맞춘 크기' 가 되도록,
-  // 사진의 원본 픽셀 크기와 보기 영역 크기를 재어 둔다.
-  const [natural, setNatural] = useState(null); // { w, h } 사진 원본 픽셀
-  const [viewport, setViewport] = useState({ w: 0, h: 0 }); // 여백을 뺀 보기 영역
-  const touchRef = useRef(null);   // 한 손가락 스와이프 시작 x 좌표
-  const pinchRef = useRef(null);   // 두 손가락 확대 시작 정보
-  const scrollRef = useRef(null);
-  const lightboxRef = useRef(null);
-  const dragRef = useRef(null);   // 확대 후 마우스로 끌어 옮길 때의 시작 지점
-
-  // 터치 처리는 네이티브 리스너로 붙이므로, 최신 zoom 값을 ref 로 따로 들고 있는다
-  const pendingScrollRef = useRef(null); // 배율 변경 직후 맞출 스크롤 위치
+  const stageRef = useRef(null); // 사진이 놓이는 영역
   const zoomRef = useRef(1);
-  useEffect(() => {
-    zoomRef.current = zoom;
-  }, [zoom]);
+  const offsetRef = useRef({ x: 0, y: 0 });
+  const dragRef = useRef(null); // 끌어서 옮기는 중의 시작 정보
+  const pinchRef = useRef(null); // 두 손가락 확대 시작 정보
+  const swipeRef = useRef(null); // 좌우로 넘기기 시작 x 좌표
 
   const close = () => setIndex(null);
   const prev = () => setIndex((i) => (i - 1 + images.length) % images.length);
   const next = () => setIndex((i) => (i + 1) % images.length);
 
+  /* ── 배율 100% 일 때의 사진 크기 ────────────────
+     원본 픽셀과 보기 영역을 비교해 '화면에 꽉 차게 맞춘 크기'를 구한다.
+     확대는 이 크기에 배율을 곱하는 방식이라, 110% 가 눈에 보이는 그대로 110% 다. */
+  const fitScale =
+    natural && viewport.w > 0 && viewport.h > 0
+      ? Math.min(viewport.w / natural.w, viewport.h / natural.h)
+      : null;
+
+  const baseWidth = fitScale ? natural.w * fitScale : 0;
+  const baseHeight = fitScale ? natural.h * fitScale : 0;
+
+  /* 확대해도 사진이 화면 밖으로 빠져나가지 않도록 이동 범위를 제한한다 */
+  const clampOffset = (next, atZoom) => {
+    const limitX = Math.max(0, (baseWidth * atZoom - viewport.w) / 2);
+    const limitY = Math.max(0, (baseHeight * atZoom - viewport.h) / 2);
+    return {
+      x: clamp(next.x, -limitX, limitX),
+      y: clamp(next.y, -limitY, limitY),
+    };
+  };
+
+  const applyView = (nextZoom, nextOffset) => {
+    const safeOffset = clampOffset(nextOffset, nextZoom);
+    zoomRef.current = nextZoom;
+    offsetRef.current = safeOffset;
+    setZoom(nextZoom);
+    setOffset(safeOffset);
+  };
+
   /*
     기준점을 유지하며 배율을 바꾼다.
 
-    그냥 배율만 올리면 스크롤 위치가 그대로라 시선이 왼쪽 위로 쏠린다.
-    확대 전에 '기준점이 콘텐츠 안의 어느 지점인지' 비율로 기억해 두고,
-    확대 후 그 지점이 화면상 같은 자리에 오도록 스크롤을 다시 맞춘다.
+    사진은 화면 중앙을 기준으로 scale 되고 offset 만큼 밀려 있다.
+    화면 좌표 p 아래에 있는 사진 위의 지점을 L 이라 하면
+        p = center + offset + zoom * L
+    확대 후에도 같은 p 에 L 이 오게 하려면
+        offset2 = p - center - (zoom2 / zoom1) * (p - center - offset1)
 
-    point 는 화면 좌표 { x, y }. 없으면 보고 있는 영역의 한가운데를 쓴다.
+    스크롤이 아니라 transform 으로 옮기기 때문에 브라우저가 개입하지 않는다.
+    (iOS Safari 는 터치 제스처 중 프로그램이 지정한 스크롤을 되돌려서,
+     스크롤 방식으로는 기준점 유지가 동작하지 않았다)
   */
   const zoomTo = (nextZoom, point) => {
-    const el = scrollRef.current;
-    const target = Math.min(MAX_ZOOM, Math.max(1, nextZoom));
+    const stage = stageRef.current;
+    const target = clamp(nextZoom, 1, MAX_ZOOM);
 
-    if (!el) {
-      setZoom(target);
+    if (!stage) {
+      applyView(target, offsetRef.current);
       return;
     }
 
-    const rect = el.getBoundingClientRect();
+    const rect = stage.getBoundingClientRect();
+    const center = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    const p = point ?? center;
 
-    // 기준점 (요소 안에서의 위치)
-    const px = point ? point.x - rect.left : rect.width / 2;
-    const py = point ? point.y - rect.top : rect.height / 2;
+    const z1 = zoomRef.current;
+    const o1 = offsetRef.current;
+    const ratio = target / z1;
 
-    // 그 지점이 콘텐츠 전체에서 차지하는 비율
-    const ratio = target / zoomRef.current;
-    const nextLeft = (el.scrollLeft + px) * ratio - px;
-    const nextTop = (el.scrollTop + py) * ratio - py;
-
-    /*
-      스크롤은 화면에 그려지기 직전(useLayoutEffect)에 맞춘다.
-      requestAnimationFrame 으로 미루면 새 크기와 옛 스크롤 위치가
-      한 프레임 동안 함께 보여서 화면이 튄다.
-    */
-    pendingScrollRef.current = { left: nextLeft, top: nextTop };
-
-    // ref 도 즉시 갱신한다. 핀치처럼 연속 호출될 때
-    // 다음 계산이 옛 배율을 기준으로 하지 않도록.
-    zoomRef.current = target;
-    setZoom(target);
+    applyView(target, {
+      x: p.x - center.x - ratio * (p.x - center.x - o1.x),
+      y: p.y - center.y - ratio * (p.y - center.y - o1.y),
+    });
   };
 
-  /* 배율이 바뀐 직후, 브라우저가 그리기 전에 스크롤을 맞춘다 */
-  useLayoutEffect(() => {
-    const pending = pendingScrollRef.current;
-    if (!pending || !scrollRef.current) return;
-
-    scrollRef.current.scrollLeft = pending.left;
-    scrollRef.current.scrollTop = pending.top;
-    pendingScrollRef.current = null;
-  }, [zoom]);
-
-  // zoom 대신 zoomRef 를 쓰는 이유: 키보드 핸들러가 useEffect 안에 등록돼
-  // 오래된 zoom 값을 붙잡고 있을 수 있다. ref 는 항상 최신값이다.
+  // 버튼과 키보드는 최신 배율을 ref 에서 읽는다 (오래된 상태 참조 방지)
   const zoomIn = (point) => zoomTo(zoomRef.current + ZOOM_STEP, point);
   const zoomOut = (point) => zoomTo(zoomRef.current - ZOOM_STEP, point);
 
-  // 사진을 바꾸면 확대 배율과 스크롤 위치를 초기화한다
-  useEffect(() => {
+  const resetView = () => {
+    zoomRef.current = 1;
+    offsetRef.current = { x: 0, y: 0 };
     setZoom(1);
+    setOffset({ x: 0, y: 0 });
+  };
+
+  // 사진을 바꾸면 배율과 위치를 초기화한다
+  useEffect(() => {
+    resetView();
     setNatural(null);
-    pendingScrollRef.current = null;
-    if (scrollRef.current) scrollRef.current.scrollTo(0, 0);
   }, [index]);
 
   // 보기 영역 크기를 재고, 창 크기나 화면 회전에 맞춰 갱신한다
@@ -113,10 +126,10 @@ export default function GallerySection() {
     if (index === null) return;
 
     const measure = () => {
-      const el = scrollRef.current;
-      if (!el) return;
-      // p-4 여백(좌우/상하 각 16px)을 뺀 실제 사진 자리
-      setViewport({ w: el.clientWidth - 32, h: el.clientHeight - 32 });
+      const stage = stageRef.current;
+      if (!stage) return;
+      const rect = stage.getBoundingClientRect();
+      setViewport({ w: rect.width, h: rect.height });
     };
 
     measure();
@@ -152,164 +165,126 @@ export default function GallerySection() {
   }, [index]);
 
   /*
-    확대 보기 안에서만 두 손가락 확대/축소(핀치)를 처리한다.
+    터치 조작.
 
-    index.html 의 뷰포트가 user-scalable=no 라 브라우저 기본 핀치는 막혀 있다.
-    청첩장 본문이 통째로 확대돼 레이아웃이 깨지는 걸 막기 위한 설정이라 그대로 두고,
-    사진을 볼 때만 여기서 직접 배율을 계산한다.
+    한 손가락
+      배율 100%  : 좌우로 넘기면 다음/이전 사진
+      확대 중    : 사진을 끌어서 옮긴다
+    두 손가락    : 벌리고 오므려 확대·축소 (기준점은 두 손가락 사이)
 
-    React 의 onTouchMove 는 passive 로 붙을 수 있어 preventDefault 가 무시된다.
-    그래서 네이티브 리스너로 { passive: false } 를 명시해 붙인다.
+    iOS Safari 는 gesturechange 와 touchmove 를 모두 발생시킨다.
+    둘 다 배율을 바꾸면 한 프레임에 두 번 계산돼 기준점이 무시되므로,
+    Safari 에서는 gesture* 쪽만 쓰고 touchmove 확대는 건너뛴다.
   */
   useEffect(() => {
     if (index === null) return;
-    const el = lightboxRef.current;
+    const el = stageRef.current;
     if (!el) return;
 
-    /** 두 손가락 사이 거리 */
-    const distance = (touches) =>
-      Math.hypot(
-        touches[0].clientX - touches[1].clientX,
-        touches[0].clientY - touches[1].clientY
-      );
+    const hasGestureEvents = 'ongesturestart' in window;
 
-    /** 두 손가락의 중간 지점 (화면 좌표) */
-    const midpoint = (touches) => ({
-      x: (touches[0].clientX + touches[1].clientX) / 2,
-      y: (touches[0].clientY + touches[1].clientY) / 2,
+    const distance = (t) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+    const midpoint = (t) => ({
+      x: (t[0].clientX + t[1].clientX) / 2,
+      y: (t[0].clientY + t[1].clientY) / 2,
     });
 
     const onTouchStart = (e) => {
       if (e.touches.length === 2) {
-        // 확대 시작 — 스와이프는 취소한다
         pinchRef.current = { startDistance: distance(e.touches), startZoom: zoomRef.current };
-        touchRef.current = null;
-      } else if (e.touches.length === 1 && zoomRef.current === 1) {
-        // 원본 크기일 때만 좌우 스와이프로 사진을 넘긴다
-        touchRef.current = e.touches[0].clientX;
+        swipeRef.current = null;
+        dragRef.current = null;
+        return;
+      }
+
+      if (e.touches.length !== 1) return;
+
+      if (zoomRef.current === 1) {
+        swipeRef.current = e.touches[0].clientX;
+      } else {
+        dragRef.current = {
+          x: e.touches[0].clientX,
+          y: e.touches[0].clientY,
+          offset: offsetRef.current,
+        };
       }
     };
 
-    /*
-      iOS Safari 는 두 손가락 제스처에 gesturechange 와 touchmove 를 모두 발생시킨다.
-      둘 다 배율을 바꾸면 같은 프레임에 zoomTo 가 두 번 불리고,
-      두 번째 호출은 이미 갱신된 배율을 기준으로 계산해 보정량이 0 이 된다.
-      그래서 기준점이 무시되고 왼쪽 위를 축으로 커진다.
-      Safari 에서는 gesture* 쪽만 쓰고 여기서는 빠진다.
-    */
-    const hasGestureEvents = typeof window !== 'undefined' && 'ongesturestart' in window;
-
     const onTouchMove = (e) => {
-      if (hasGestureEvents) return;
-      if (e.touches.length !== 2 || !pinchRef.current) return;
+      // 두 손가락 확대 (안드로이드 등)
+      if (e.touches.length === 2 && pinchRef.current && !hasGestureEvents) {
+        e.preventDefault();
+        const ratio = distance(e.touches) / pinchRef.current.startDistance;
+        const nextZoom = pinchRef.current.startZoom * ratio;
+        zoomTo(nextZoom < 1.05 ? 1 : nextZoom, midpoint(e.touches));
+        return;
+      }
 
-      e.preventDefault(); // 확대 중 화면이 같이 움직이지 않도록
-
-      const ratio = distance(e.touches) / pinchRef.current.startDistance;
-      const next = pinchRef.current.startZoom * ratio;
-
-      // 1 에 가까우면 원본으로 붙여 준다 (손을 떼기 전에 화면이 흔들리지 않게)
-      // 두 손가락 사이를 기준으로 삼아, 벌리는 지점이 화면에 그대로 남게 한다
-      zoomTo(next < 1.05 ? 1 : next, midpoint(e.touches));
+      // 확대 상태에서 한 손가락으로 끌어 옮기기
+      if (e.touches.length === 1 && dragRef.current) {
+        e.preventDefault();
+        applyView(zoomRef.current, {
+          x: dragRef.current.offset.x + (e.touches[0].clientX - dragRef.current.x),
+          y: dragRef.current.offset.y + (e.touches[0].clientY - dragRef.current.y),
+        });
+      }
     };
 
     const onTouchEnd = (e) => {
       if (e.touches.length < 2) pinchRef.current = null;
+      if (e.touches.length === 0) dragRef.current = null;
 
-      if (touchRef.current === null) return;
+      if (swipeRef.current === null) return;
 
-      const delta = e.changedTouches[0].clientX - touchRef.current;
-      if (delta > 50) prev();
-      if (delta < -50) next();
-      touchRef.current = null;
+      const delta = e.changedTouches[0].clientX - swipeRef.current;
+      if (delta > SWIPE_THRESHOLD) prev();
+      if (delta < -SWIPE_THRESHOLD) next();
+      swipeRef.current = null;
     };
 
-    /*
-      iOS Safari 전용 처리.
-      Safari 는 접근성을 이유로 user-scalable=no 를 무시하고 자체 핀치를 우선한다.
-      그래서 두 손가락 제스처가 touchmove 까지 오지 않고 페이지 전체가 확대돼 버린다.
-      gesture* 이벤트는 iOS Safari 에서만 발생하므로, 확대 보기가 열려 있는 동안
-      이것을 막아 우리 코드가 배율을 직접 다루도록 한다.
-
-      e.scale 은 Safari 가 계산해 주는 '처음 대비 몇 배' 값이라
-      손가락 사이 거리를 직접 잴 필요가 없다.
-    */
-    const gestureStartZoom = { value: 1 };
-
-    const gestureAnchor = { x: 0, y: 0 };
+    /* iOS Safari 전용 — 브라우저 기본 핀치를 막고 배율을 직접 다룬다 */
+    const gesture = { startZoom: 1, anchor: { x: 0, y: 0 } };
 
     const onGestureStart = (e) => {
       e.preventDefault();
-      gestureStartZoom.value = zoomRef.current;
-      gestureAnchor.x = e.clientX ?? window.innerWidth / 2;
-      gestureAnchor.y = e.clientY ?? window.innerHeight / 2;
+      gesture.startZoom = zoomRef.current;
+      gesture.anchor = {
+        x: typeof e.clientX === 'number' ? e.clientX : window.innerWidth / 2,
+        y: typeof e.clientY === 'number' ? e.clientY : window.innerHeight / 2,
+      };
+      swipeRef.current = null;
+      dragRef.current = null;
     };
 
     const onGestureChange = (e) => {
       e.preventDefault();
-
-      // 제스처 도중 손가락이 움직이면 기준점도 따라간다
       if (typeof e.clientX === 'number') {
-        gestureAnchor.x = e.clientX;
-        gestureAnchor.y = e.clientY;
+        gesture.anchor = { x: e.clientX, y: e.clientY };
       }
-
-      const next = gestureStartZoom.value * e.scale;
-      zoomTo(next < 1.05 ? 1 : next, gestureAnchor);
+      const nextZoom = gesture.startZoom * e.scale;
+      zoomTo(nextZoom < 1.05 ? 1 : nextZoom, gesture.anchor);
     };
 
     const onGestureEnd = (e) => e.preventDefault();
-
-    el.addEventListener('gesturestart', onGestureStart, { passive: false });
-    el.addEventListener('gesturechange', onGestureChange, { passive: false });
-    el.addEventListener('gestureend', onGestureEnd, { passive: false });
 
     el.addEventListener('touchstart', onTouchStart, { passive: true });
     el.addEventListener('touchmove', onTouchMove, { passive: false });
     el.addEventListener('touchend', onTouchEnd, { passive: true });
     el.addEventListener('touchcancel', onTouchEnd, { passive: true });
+    el.addEventListener('gesturestart', onGestureStart, { passive: false });
+    el.addEventListener('gesturechange', onGestureChange, { passive: false });
+    el.addEventListener('gestureend', onGestureEnd, { passive: false });
 
     return () => {
-      el.removeEventListener('gesturestart', onGestureStart);
-      el.removeEventListener('gesturechange', onGestureChange);
-      el.removeEventListener('gestureend', onGestureEnd);
       el.removeEventListener('touchstart', onTouchStart);
       el.removeEventListener('touchmove', onTouchMove);
       el.removeEventListener('touchend', onTouchEnd);
       el.removeEventListener('touchcancel', onTouchEnd);
+      el.removeEventListener('gesturestart', onGestureStart);
+      el.removeEventListener('gesturechange', onGestureChange);
+      el.removeEventListener('gestureend', onGestureEnd);
     };
-  }, [index, images.length]);
-
-  /*
-    확대한 뒤 사진을 끌어서 움직인다. (마우스 전용)
-
-    확대 중에는 바깥 div 가 스크롤 컨테이너가 되므로,
-    마우스를 누른 채 움직인 거리만큼 그 스크롤 위치를 반대로 밀어 준다.
-    손가락은 브라우저 기본 스크롤이 더 부드러워서 그대로 둔다.
-  */
-  const onDragStart = (e) => {
-    if (zoom === 1 || e.button !== 0) return;
-
-    e.preventDefault(); // 사진이 브라우저 기본 드래그로 끌려가지 않도록
-
-    dragRef.current = {
-      x: e.clientX,
-      y: e.clientY,
-      left: scrollRef.current?.scrollLeft ?? 0,
-      top: scrollRef.current?.scrollTop ?? 0,
-    };
-  };
-
-  const onDragMove = (e) => {
-    if (!dragRef.current || !scrollRef.current) return;
-
-    scrollRef.current.scrollLeft = dragRef.current.left - (e.clientX - dragRef.current.x);
-    scrollRef.current.scrollTop = dragRef.current.top - (e.clientY - dragRef.current.y);
-  };
-
-  const onDragEnd = () => {
-    dragRef.current = null;
-  };
+  }, [index, images.length, baseWidth, baseHeight, viewport.w, viewport.h]);
 
   if (images.length === 0) {
     return (
@@ -322,11 +297,28 @@ export default function GallerySection() {
     );
   }
 
+  /* 마우스로 끌어서 옮기기 */
+  const onMouseDown = (e) => {
+    if (zoom === 1 || e.button !== 0) return;
+    e.preventDefault();
+    dragRef.current = { x: e.clientX, y: e.clientY, offset: offsetRef.current };
+  };
+
+  const onMouseMove = (e) => {
+    if (!dragRef.current) return;
+    applyView(zoomRef.current, {
+      x: dragRef.current.offset.x + (e.clientX - dragRef.current.x),
+      y: dragRef.current.offset.y + (e.clientY - dragRef.current.y),
+    });
+  };
+
+  const onMouseUp = () => {
+    dragRef.current = null;
+  };
+
   const onWheel = (e) => {
     if (!e.ctrlKey && Math.abs(e.deltaY) < 4) return;
     e.preventDefault();
-
-    // 커서가 가리키는 지점을 기준으로 확대·축소한다
     const point = { x: e.clientX, y: e.clientY };
     if (e.deltaY < 0) zoomIn(point);
     else zoomOut(point);
@@ -348,36 +340,14 @@ export default function GallerySection() {
   const currentGroup = index === null ? null : groupOfIndex(index);
 
   /*
-    배율 100% 일 때의 크기를 먼저 구한다.
-
-    예전에는 확대할 때 '컨테이너 폭의 zoom%' 로 잡았는데,
-    세로 사진은 화면에 맞춘 폭이 컨테이너의 절반도 안 되기 때문에
-    110% 로 올리는 순간 실제로는 세 배 가까이 커져 버렸다.
-    원본 픽셀 크기와 보기 영역을 비교해 '맞춘 크기'를 구하고,
-    거기에 배율을 곱하면 110% 가 눈에 보이는 그대로 110% 가 된다.
+    확대 보기를 document.body 로 빼낸다.
+    Reveal 컴포넌트가 transform 을 쓰기 때문에, 그 안에서 position:fixed 를
+    쓰면 화면이 아니라 섹션 박스가 기준이 되어 사진이 잘린다.
   */
-  const fitScale =
-    natural && viewport.w > 0 && viewport.h > 0
-      ? Math.min(viewport.w / natural.w, viewport.h / natural.h)
-      : null;
-
-  const displaySize = fitScale
-    ? {
-        width: Math.round(natural.w * fitScale * zoom),
-        height: Math.round(natural.h * fitScale * zoom),
-      }
-    : undefined;
-
-  /**
-   * 확대 보기를 document.body 로 빼낸다.
-   * Reveal 컴포넌트가 transform 을 쓰기 때문에, 그 안에서 position:fixed 를
-   * 쓰면 화면이 아니라 섹션 박스가 기준이 되어 사진이 480px 폭에 잘린다.
-   */
   const lightbox =
     index !== null &&
     createPortal(
       <div
-        ref={lightboxRef}
         className="lightbox fixed inset-0 z-[100]"
         role="dialog"
         aria-modal="true"
@@ -392,29 +362,23 @@ export default function GallerySection() {
         />
         <div className="absolute inset-0 bg-black/75" />
 
-        {/* 사진 영역: 원본 크기면 화면에 맞추고, 확대하면 스크롤해서 본다 */}
+        {/*
+          사진이 놓이는 영역.
+          스크롤을 쓰지 않고 transform 으로만 위치를 정한다.
+          touch-none 이라 브라우저 기본 스크롤·확대가 끼어들지 않는다.
+        */}
         <div
-          ref={scrollRef}
+          ref={stageRef}
           onWheel={onWheel}
+          onMouseDown={onMouseDown}
+          onMouseMove={onMouseMove}
+          onMouseUp={onMouseUp}
+          onMouseLeave={onMouseUp}
           onClick={() => zoom === 1 && close()}
-          onMouseDown={onDragStart}
-          onMouseMove={onDragMove}
-          onMouseUp={onDragEnd}
-          onMouseLeave={onDragEnd}
-          className={
-            zoom === 1
-              ? 'absolute inset-0 grid place-items-center overflow-hidden p-4'
-              : 'scrollbar-hide absolute inset-0 grid cursor-grab select-none place-items-center overflow-auto overscroll-contain p-4 active:cursor-grabbing'
-          }
+          className={`absolute inset-0 touch-none overflow-hidden p-4 ${
+            zoom === 1 ? '' : 'cursor-grab select-none active:cursor-grabbing'
+          }`}
         >
-          {/*
-            크기를 잰 뒤에는 배율과 상관없이 계산한 픽셀 값만 쓴다.
-
-            예전에는 100% 일 때만 CSS(object-contain)로 맞추고 확대할 때만 계산값을 썼는데,
-            두 방식의 결과가 미묘하게 달라서 100% -> 110% 로 올리는 순간
-            오히려 작아지는 일이 있었다. 한 가지 방식으로 통일하면 그 경계가 사라진다.
-            (아직 크기를 못 잰 로딩 직후에만 CSS 로 맞춘다)
-          */}
           <img
             key={images[index]}
             src={images[index]}
@@ -425,14 +389,18 @@ export default function GallerySection() {
             onClick={(e) => e.stopPropagation()}
             onDoubleClick={(e) => zoomTo(zoom === 1 ? 2 : 1, { x: e.clientX, y: e.clientY })}
             draggable={false}
-            className={
-              displaySize
-                ? `block max-w-none rounded-lg ring-1 ring-white/20 ${
-                    zoom === 1 ? 'lightbox-image shadow-[0_28px_70px_rgba(0,0,0,0.7)]' : ''
-                  }`
-                : 'lightbox-image max-h-full max-w-full rounded-lg object-contain shadow-[0_28px_70px_rgba(0,0,0,0.7)] ring-1 ring-white/20'
+            className={`absolute left-1/2 top-1/2 max-w-none rounded-lg ring-1 ring-white/20 ${
+              zoom === 1 ? 'lightbox-image shadow-[0_28px_70px_rgba(0,0,0,0.7)]' : ''
+            }`}
+            style={
+              fitScale
+                ? {
+                    width: baseWidth,
+                    height: baseHeight,
+                    transform: `translate(-50%, -50%) translate(${offset.x}px, ${offset.y}px) scale(${zoom})`,
+                  }
+                : { maxWidth: '100%', maxHeight: '100%', transform: 'translate(-50%, -50%)' }
             }
-            style={displaySize}
           />
         </div>
 
@@ -459,7 +427,6 @@ export default function GallerySection() {
           </div>
         )}
 
-        {/* 조작 버튼 */}
         <button onClick={close} aria-label="닫기" className={`${iconButton} fixed right-4 top-4`}>
           <X size={20} />
         </button>
@@ -509,10 +476,10 @@ export default function GallerySection() {
     );
 
   // 그룹별로 전체 목록에서의 시작 위치를 미리 계산해 둔다 (확대 보기 인덱스용)
-  let offset = 0;
+  let cursor = 0;
   const blocks = groups.map((group) => {
-    const block = { ...group, offset };
-    offset += group.images.length;
+    const block = { ...group, offset: cursor };
+    cursor += group.images.length;
     return block;
   });
 
@@ -579,10 +546,7 @@ function GalleryGroupBlock({ group, step, limit, onOpen, onExpand, onCollapse })
       </div>
 
       {/* 가로 3열 격자 — 화면에 들어오면 칸이 순서대로 나타난다 */}
-      <div
-        ref={gridRef}
-        className={`grid grid-cols-3 gap-1.5 ${inView ? 'cells-in' : ''}`}
-      >
+      <div ref={gridRef} className={`grid grid-cols-3 gap-1.5 ${inView ? 'cells-in' : ''}`}>
         {visible.map((src, i) => (
           <button
             key={src}
