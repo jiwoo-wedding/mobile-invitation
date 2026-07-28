@@ -1,9 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { CONFIG } from '../../config/invitationConfig';
 import { mainImage } from '../../lib/assets';
 import { formatFullDate, formatTime } from '../../lib/format';
 import { showsTime } from '../../lib/visibility';
-import React, { useState } from 'react';
 
 /**
  * 첫 화면 — 대표 사진 위에 이름과 날짜를 올린다.
@@ -11,10 +10,16 @@ import React, { useState } from 'react';
  */
 export default function IntroSection({ view }) {
   const { groom, bride } = CONFIG.couple;
+
+  /*
+    사진을 다 받기 전에 보여주면, 베이스라인 JPEG 특성상
+    위쪽부터 한 줄씩 그려져서 아래는 빈칸으로 남는다.
+    다 받은 뒤에 나타나게 해서 중간 상태를 감춘다.
+  */
   const [loaded, setLoaded] = useState(false);
 
   return (
-    <section className="relative flex aspect-[3/4] max-h-[100svh] min-h-[520px] w-full flex-col items-center justify-between overflow-hidden text-center" bg-bg>
+    <section className="relative flex aspect-[3/4] max-h-[100svh] min-h-[520px] w-full flex-col items-center justify-between overflow-hidden bg-bg text-center">
       {mainImage && (
         <img
           src={mainImage}
@@ -28,6 +33,7 @@ export default function IntroSection({ view }) {
           style={{ objectPosition: CONFIG.mainPhotoPosition ?? '50% 50%' }}
         />
       )}
+
       {/* 아래쪽을 본문 배경색으로 자연스럽게 잇는 그라데이션 */}
       <div className="absolute inset-0 z-10 bg-gradient-to-b from-black/40 via-transparent to-bg" />
 
