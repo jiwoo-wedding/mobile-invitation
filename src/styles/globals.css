@@ -159,17 +159,21 @@ body {
   animation: frame-in 1.1s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
 }
 
-/* 대표 사진이 아주 천천히 확대되는 켄 번스 효과 */
+/*
+  대표 사진은 처음부터 조금 들어간 상태(1.15배)로 시작해
+  천천히 더 가까워진다(1.32배).
+  1 에서 시작하면 인물이 멀어 보여서 시작점 자체를 확대해 둔다.
+*/
 @keyframes ken-burns {
   from {
-    transform: scale(1);
+    transform: scale(1.15);
   }
   to {
-    transform: scale(1.12);
+    transform: scale(1.32);
   }
 }
 .animate-ken-burns {
-  animation: ken-burns 18s ease-out forwards;
+  animation: ken-burns 14s ease-out forwards;
 }
 
 /* 첫 화면 텍스트가 순서대로 올라오는 등장 효과 */
@@ -270,9 +274,14 @@ body {
 */
 @media (prefers-reduced-motion: reduce) {
   /* 반복되는 움직임은 정지 */
-  .animate-bounce-slow,
+  .animate-bounce-slow {
+    animation: none;
+  }
+
+  /* 움직임은 멈추되, 확대된 구도는 그대로 유지한다 */
   .animate-ken-burns {
     animation: none;
+    transform: scale(1.2);
   }
 
   /* 한 번만 재생되는 등장 효과는 살리되, 이동 없이 페이드만 */
