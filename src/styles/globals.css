@@ -188,11 +188,11 @@ body {
   }
   to {
     opacity: 1;
-    transform: scale(1.32);
+    transform: scale(1.7);
   }
 }
 .animate-ken-burns {
-  animation: ken-burns 30s linear forwards;
+  animation: ken-burns 3s linear forwards;
 }
 
 /* 첫 화면 텍스트가 순서대로 올라오는 등장 효과 */
