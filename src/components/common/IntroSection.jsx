@@ -48,10 +48,6 @@ export default function IntroSection({ view }) {
 
   return (
     <section className="relative flex aspect-[3/4] max-h-[100svh] min-h-[520px] w-full flex-col items-center justify-between overflow-hidden bg-bg text-center">
-      <div className="fixed left-2 top-2 z-50 rounded bg-black/80 px-2 py-1 text-[10px] text-white">
-        reduce: {String(window.matchMedia('(prefers-reduced-motion: reduce)').matches)} / v2
-      </div>
-
       {mainImage && (
         <img
           ref={imgRef}
