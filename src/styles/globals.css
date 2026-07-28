@@ -130,17 +130,18 @@ body {
   letter-spacing: 6px;
 }
 
-@keyframes bounce-slow {
-  0%,
-  100% {
-    transform: translateY(0);
+@keyframes ken-burns {
+  from {
+    opacity: 0;
+    transform: scale(1.15);
   }
-  50% {
-    transform: translateY(-10px);
+  8% {
+    opacity: 1;
   }
-}
-.animate-bounce-slow {
-  animation: bounce-slow 2s infinite;
+  to {
+    opacity: 1;
+    transform: scale(1.32);
+  }
 }
 
 /* 초대장 열기 화면의 카드 테두리가 서서히 자리를 잡는 효과 */
@@ -173,7 +174,7 @@ body {
   }
 }
 .animate-ken-burns {
-  animation: ken-burns 14s ease-out forwards;
+  animation: ken-burns 30s linear forwards;
 }
 
 /* 첫 화면 텍스트가 순서대로 올라오는 등장 효과 */
