@@ -1,89 +1,345 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { CONFIG } from '../../config/invitationConfig';
-import { mainImage } from '../../lib/assets';
-import { formatFullDate, formatTime } from '../../lib/format';
-import { showsTime } from '../../lib/visibility';
+@import url('https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
 
-/* 확대 구간과 속도 — 여기 숫자만 바꾸면 됩니다 */
-const ZOOM_FROM = 1.15; // 처음 구도
-const ZOOM_TO = 1.4; // 끝 구도
-const ZOOM_SECONDS = 12; // 걸리는 시간
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-/**
- * 첫 화면 — 대표 사진 위에 이름과 날짜를 올린다.
- *
- * 확대 효과를 CSS 클래스가 아니라 인라인 스타일로 직접 준다.
- * 클래스 방식은 @keyframes 중복이나 prefers-reduced-motion 규칙에
- * 덮어써질 여지가 있어서, 어디서 막혔는지 추적하기 어려웠다.
- */
-export default function IntroSection({ view }) {
-  const { groom, bride } = CONFIG.couple;
+/*
+  색상 토큰의 실제 값은 src/config/themes.js 가 런타임에 주입한다.
+  아래 값은 테마 적용 전 첫 페인트에서 쓰이는 기본값(시그니처 올리브)이다.
+*/
+:root {
+  /* 청첩장 본체 최대 폭. 480~600px 사이에서 취향껏 조절하세요. */
+  --container-max: 560px;
 
-  const imgRef = useRef(null);
-  const [loaded, setLoaded] = useState(false);
-  const [zoomed, setZoomed] = useState(false);
+  --c-page: #1a1c14;
+  --c-page-rgb: 26 28 20;
+  --c-bg: #474a37;
+  --c-bg-rgb: 71 74 55;
+  --c-surface: #2f3327;
+  --c-surface-rgb: 47 51 39;
+  --c-accent: #d8e592;
+  --c-accent-rgb: 216 229 146;
+  --c-accent-fg: #474a37;
+  --c-accent-fg-rgb: 71 74 55;
+  --c-text: #f1f3e8;
+  --c-text-rgb: 241 243 232;
+  --c-muted: #b9bfa4;
+  --c-muted-rgb: 185 191 164;
+  --c-border: #d8e592;
+  --c-border-rgb: 216 229 146;
+}
 
-  // 모션 최소화 설정이면 움직임 없이 고정된 구도로 보여준다
-  const reduceMotion =
-    typeof window !== 'undefined' &&
-    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-
-  const start = () => {
-    setLoaded(true);
-    // 다음 프레임에 목표값을 주어야 transition 이 실제로 재생된다
-    requestAnimationFrame(() => requestAnimationFrame(() => setZoomed(true)));
-  };
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--c-page);
+  font-family: 'Noto Sans KR', sans-serif;
+  color: var(--c-text);
+  min-height: 100svh;
+  transition: background-color 0.4s ease;
 
   /*
-    캐시에 이미 있는 사진은 React 가 붙기 전에 로딩이 끝나 onLoad 가 오지 않는다.
-    그러면 계속 숨겨진 채로 남으므로 마운트 시 한 번 확인한다.
+    스크롤바 자리를 항상 비워 둔다.
+    커튼(fixed)만 떠 있을 때는 문서 높이가 없어 스크롤바가 없다가,
+    본문이 나타나며 스크롤바가 생기면 body 폭이 줄어 화면이 옆으로 밀린다.
+    미리 자리를 잡아 두면 그 순간의 흔들림이 사라진다.
+    (휴대폰은 스크롤바가 콘텐츠 위에 겹쳐 떠서 원래 이 문제가 없다)
   */
-  useEffect(() => {
-    if (imgRef.current?.complete) start();
-  }, []);
+  scrollbar-gutter: stable;
+}
 
-  const scale = reduceMotion ? 1.2 : zoomed ? ZOOM_TO : ZOOM_FROM;
+/*
+  React 가 렌더링되는 지점.
+  폭을 지정하지 않으면 부모 상황에 따라 내용물 크기로 줄어들 수 있고,
+  그러면 안쪽 .mobile-container 의 width 가 엉뚱한 값을 기준으로 잡힌다.
+*/
+#root {
+  width: 100%;
+}
 
-  return (
-    <section className="relative flex aspect-[3/4] max-h-[100svh] min-h-[520px] w-full flex-col items-center justify-between overflow-hidden bg-bg text-center">
-      {mainImage && (
-        <img
-          ref={imgRef}
-          src={mainImage}
-          alt="신랑 신부 대표 사진"
-          onLoad={start}
-          decoding="async"
-          fetchpriority="high"
-          className="absolute inset-0 z-0 h-full w-full object-cover"
-          style={{
-            objectPosition: CONFIG.mainPhotoPosition ?? '50% 50%',
-            opacity: loaded ? 1 : 0,
-            transform: `scale(${scale})`,
-            transition: reduceMotion
-              ? 'opacity 1.2s ease-out'
-              : `opacity 1.2s ease-out, transform ${ZOOM_SECONDS}s linear`,
-            willChange: 'transform',
-          }}
-        />
-      )}
+/* 청첩장 본체: 최대 --container-max, 항상 중앙 정렬 */
+.mobile-container {
+  width: min(100%, var(--container-max));
+  max-width: var(--container-max);
+  margin: 0 auto;
+  min-height: 100svh;
+  background-color: var(--c-bg);
+  box-shadow: 0 0 30px rgb(0 0 0 / 0.5);
+  position: relative;
+  transition: background-color 0.4s ease;
 
-      {/* 아래쪽을 본문 배경색으로 자연스럽게 잇는 그라데이션 */}
-      <div className="absolute inset-0 z-10 bg-gradient-to-b from-black/40 via-transparent to-bg" />
+  /*
+    가로 넘침만 잘라내고 세로 스크롤은 만들지 않는다.
+    overflow-x: hidden 을 쓰면 CSS 규칙상 overflow-y 가 auto 로 계산되어
+    이 요소가 자체 스크롤 컨테이너가 된다. 그러면 브라우저 스크롤바 안쪽에
+    또 하나의 스크롤바가 생기고, 모달을 열 때 배경 스크롤도 안 잠긴다.
+    clip 은 다른 축을 건드리지 않는다.
+  */
+  overflow-x: clip;
+}
 
-      <div className="relative z-20 space-y-2 pt-16 font-batang">
-        <p
-          className="animate-enter text-sm tracking-[0.3em] text-accent"
-          style={{ animationDelay: '200ms' }}
-        >
-          WE ARE GETTING MARRIED
-        </p>
-        <h1 className="animate-enter text-3xl font-bold" style={{ animationDelay: '450ms' }}>
-          {groom.name} <span className="text-accent">&amp;</span> {bride.name}
-        </h1>
-        <p className="animate-enter text-sm opacity-90" style={{ animationDelay: '700ms' }}>
-          {formatFullDate()}
-          {showsTime(view) && ` ${formatTime()}`}
-        </p>
-      </div>
+.font-batang {
+  font-family: 'Gowun Batang', serif;
+}
 
-      <div className="relative z-20 flex animate-bounce-slow flex-col
+/* ── 테마별 배경 패턴 ─────────────────────────────── */
+[data-pattern='dots'] .mobile-container,
+[data-pattern='dots'] .cover-screen {
+  background-image: radial-gradient(
+    rgb(var(--c-accent-rgb) / 0.45) 0.75px,
+    transparent 0.75px
+  );
+  background-size: 16px 16px;
+}
+
+[data-pattern='stars'] .mobile-container,
+[data-pattern='stars'] .cover-screen {
+  background-image:
+    radial-gradient(rgb(var(--c-accent-rgb) / 0.7) 0.8px, transparent 0.8px),
+    radial-gradient(rgb(var(--c-text-rgb) / 0.25) 0.6px, transparent 0.6px);
+  background-size: 90px 90px, 40px 40px;
+  background-position: 0 0, 20px 30px;
+}
+
+[data-pattern='grain'] .mobile-container,
+[data-pattern='grain'] .cover-screen {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgb(var(--c-border-rgb) / 0.06) 0 2px,
+    transparent 2px 5px
+  );
+}
+
+[data-pattern='hanji'] .mobile-container,
+[data-pattern='hanji'] .cover-screen {
+  background-image:
+    repeating-linear-gradient(0deg, rgb(var(--c-border-rgb) / 0.08) 0 1px, transparent 1px 7px),
+    repeating-linear-gradient(90deg, rgb(var(--c-border-rgb) / 0.06) 0 1px, transparent 1px 7px);
+}
+
+[data-pattern='none'] .mobile-container,
+[data-pattern='none'] .cover-screen {
+  background-image: none;
+}
+
+/* ── 공통 유틸 ───────────────────────────────────── */
+.section-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 0;
+  color: var(--c-accent);
+  opacity: 0.8;
+  font-size: 12px;
+  letter-spacing: 6px;
+}
+
+/* SCROLL DOWN 화살표가 위아래로 살짝 움직이는 효과 */
+@keyframes bounce-slow {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+.animate-bounce-slow {
+  animation: bounce-slow 2s infinite;
+}
+
+/* 초대장 열기 화면의 카드 테두리가 서서히 자리를 잡는 효과 */
+@keyframes frame-in {
+  from {
+    opacity: 0;
+    transform: scale(1.03);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.cover-frame {
+  opacity: 0;
+  animation: frame-in 1.1s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
+
+/*
+  대표 사진 — 서서히 나타나면서 아주 천천히 가까워진다.
+
+  시작을 1 이 아니라 1.15 로 두는 이유:
+    1 에서 시작하면 인물이 멀어 보인다. 처음부터 조금 들어간 구도로 연다.
+
+  linear 를 쓰는 이유:
+    ease-out 은 앞 1~2초에 움직임의 대부분을 소화하고 나머지는 거의 멈춘다.
+    그러면 사진이 화면에 뜨는 순간 이미 끝나 있어 정지 화면처럼 보인다.
+    linear 로 두면 30초 내내 일정하게 조금씩 가까워진다.
+
+  forwards 라 한 번만 재생되고 마지막 상태에서 멈춘다. 반복하지 않는다.
+*/
+@keyframes ken-burns {
+  from {
+    opacity: 0;
+    transform: scale(1.15);
+  }
+  8% {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+    transform: scale(1.32);
+  }
+}
+.animate-ken-burns {
+  animation: ken-burns 30s linear forwards;
+}
+
+/* 첫 화면 텍스트가 순서대로 올라오는 등장 효과 */
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.animate-enter {
+  opacity: 0;
+  animation: enter 0.9s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
+
+/* 스크롤해서 화면에 들어올 때 나타나는 섹션 (Reveal 컴포넌트) */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    opacity 0.8s cubic-bezier(0.22, 0.61, 0.36, 1),
+    transform 0.8s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+/*
+  will-change 를 넣지 않는다.
+  will-change: transform 은 position:fixed 자손의 기준 박스를 이 요소로 바꿔버려서,
+  안쪽 확대 보기가 화면 전체가 아니라 섹션 폭에 갇히게 된다.
+*/
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* 갤러리 격자 칸이 순차적으로 떠오르는 효과 */
+@keyframes cell-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+/*
+  갤러리 칸은 기본적으로 숨어 있고, 격자가 화면에 들어왔을 때
+  부모에 .cells-in 이 붙으면서 순서대로 나타난다.
+  (페이지 열릴 때 한 번에 재생하면 아래쪽 갤러리는 도착 전에 끝나 버린다)
+*/
+.gallery-cell {
+  opacity: 0;
+}
+
+.cells-in .gallery-cell {
+  animation: cell-in 0.5s ease-out forwards;
+}
+
+/* 확대 보기 */
+@keyframes lightbox-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.lightbox {
+  animation: lightbox-in 0.25s ease-out;
+}
+@keyframes lightbox-image-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.lightbox-image {
+  animation: lightbox-image-in 0.3s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/*
+  모션 최소화 설정(iOS '동작 줄이기' · 저전력 모드, Android '애니메이션 제거')일 때.
+
+  예전에는 애니메이션을 전부 껐지만, 그러면 상당수 하객에게 효과가 아예 안 보였다.
+  (iOS 는 배터리가 낮아 저전력 모드가 켜지면 이 설정을 자동으로 활성화한다.)
+
+  그래서 지금은 끄지 않고 "부드럽게" 만든다.
+  - 페이드(투명도)는 그대로 둔다 — 어지럼증을 유발하지 않는다.
+  - 위아래로 밀려 올라오거나 확대되는 '움직임'만 없앤다.
+  - 계속 반복되는 애니메이션(스크롤 화살표)만 정지시킨다.
+    반복 모션이 멀미를 유발하는 주범이라 이건 유지하는 게 맞다.
+*/
+@media (prefers-reduced-motion: reduce) {
+  /* 반복되는 움직임은 정지 */
+  .animate-bounce-slow {
+    animation: none;
+  }
+
+  /* 대표 사진은 움직임만 멈추고, 확대된 구도와 페이드는 유지한다 */
+  .animate-ken-burns {
+    animation: fade-only 1.2s ease-out forwards;
+    transform: scale(1.2);
+  }
+
+  /* 한 번만 재생되는 등장 효과는 살리되, 이동 없이 페이드만 */
+  .reveal {
+    transform: none;
+    transition: opacity 0.8s ease;
+  }
+  .reveal.is-visible {
+    opacity: 1;
+  }
+
+  .cells-in .gallery-cell {
+    animation: fade-only 0.5s ease-out forwards;
+  }
+  .lightbox-image {
+    animation: fade-only 0.3s ease-out;
+  }
+}
+
+@keyframes fade-only {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 확대 보기처럼 직접 끌어서 움직이는 곳은 스크롤바를 감춘다 */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* 키보드 포커스는 항상 보이게 */
+:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 2px;
+}
