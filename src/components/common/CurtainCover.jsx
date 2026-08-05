@@ -1,6 +1,6 @@
 import React from 'react';
 import { CONFIG } from '../../config/invitationConfig';
-import { formatWeekday, formatTime, formatShortDate } from '../../lib/format';
+import { formatTime, formatShortDate } from '../../lib/format';
 import { showsTime, showsVenue } from '../../lib/visibility';
 
 /**
@@ -10,22 +10,23 @@ import { showsTime, showsVenue } from '../../lib/visibility';
  * 사진 없이, 청첩장 카드처럼 이중 테두리와 글자만으로 구성했다.
  *
  * 링크 종류에 따라 성격이 다르므로 문구와 노출 정보를 나눈다.
+ *
  *   내빈용 : 'INVITATION' / '초대장 열기'
  *              2026.12.19
- *              토요일 오후 1시
- *              OO웨딩홀 3층 단독홀
+ *              오전 11시 30분
+ *              한식다이닝 이음          ← 악센트 색
+ *              브라이튼 여의도 상가 2층 · 여의도
  *
  *   외부용 : 'WEDDING ANNOUNCEMENT' / '소식 보기'
  *              2026.12.19
  *              (아래 줄 없음)
  *
- * 큰 글씨에 이미 날짜가 있으므로 아래 줄에서는 날짜를 반복하지 않고
- * 요일과 시간만 적는다.
- *
- * 외부 손님은 초대하지 않으므로, 외부용에서는 시간과 예식장을 표시하지 않는다.
+ * 큰 글씨에 이미 날짜가 있으므로 아래 줄에서는 날짜를 반복하지 않는다.
+ * 외부 손님은 초대하지 않으므로, 외부용에서는 시간과 장소를 표시하지 않는다.
  * (오시라는 뜻으로 읽힐 정보를 남기지 않는다)
- * (문구를 바꾸고 싶으면 invitationConfig.js 의 각 종류에
- *  curtainLabel / curtainButton 을 추가하면 그 값이 우선한다)
+ *
+ * 문구를 바꾸고 싶으면 invitationConfig.js 의 각 종류에
+ * curtainLabel / curtainButton 을 추가하면 그 값이 우선한다.
  */
 const CURTAIN_TEXT = {
   guest: { label: 'INVITATION', button: '초대장 열기' },
@@ -34,11 +35,14 @@ const CURTAIN_TEXT = {
 
 export default function CurtainCover({ onOpen, view }) {
   const { groom, bride } = CONFIG.couple;
-  const { venue, hall } = CONFIG.wedding;
+  const { venue, hall, area } = CONFIG.wedding;
 
   const preset = CURTAIN_TEXT[view?.type] ?? CURTAIN_TEXT.announcement;
   const label = view?.curtainLabel ?? preset.label;
   const buttonText = view?.curtainButton ?? preset.button;
+
+  // '브라이튼 여의도 상가 2층 · 여의도' 처럼 있는 것만 이어 붙인다
+  const detail = [hall, area].filter(Boolean).join(' · ');
 
   return (
     <div className="cover-screen fixed inset-0 z-40 flex items-center justify-center overflow-hidden bg-bg px-6 text-ink">
@@ -70,12 +74,25 @@ export default function CurtainCover({ onOpen, view }) {
           <p className="font-batang text-base tracking-[0.2em] text-accent tabular-nums">
             {formatShortDate()}
           </p>
-          {(showsTime(view) || showsVenue(view)) && (
-            <p className="text-xs leading-6 text-muted">
-              {showsTime(view) && `${formatWeekday()} ${formatTime()}`}
-              {showsTime(view) && showsVenue(view) && <br />}
-              {showsVenue(view) && `${venue} ${hall}`}
-            </p>
+
+          {showsTime(view) && <p className="text-xs text-muted">{formatTime()}</p>}
+
+          {showsVenue(view) && (
+            <>
+              <div
+                className="mx-auto flex w-32 items-center gap-2 pt-3 text-accent/50"
+                aria-hidden="true"
+              >
+                <span className="h-px flex-1 bg-line/30" />
+                <span className="text-[9px]">✦</span>
+                <span className="h-px flex-1 bg-line/30" />
+              </div>
+
+              <div className="pt-1">
+                <p className="font-batang text-sm font-bold text-ink">{venue}</p>
+                {detail && <p className="mt-0.5 text-[11px] leading-5 text-muted">{detail}</p>}
+              </div>
+            </>
           )}
         </div>
 
