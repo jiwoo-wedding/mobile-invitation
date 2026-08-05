@@ -53,10 +53,10 @@ export const CONFIG = {
     time: '11:30',
 
     venue: '한식다이닝 이음',
-    hall: '브라이튼 여의도 상가 2층',
+    hall: '서울 영등포구 국제금융로 39,',
     area: '',
-    address: '서울 영등포구 국제금융로 39 2층',
-    addressJibun: '서울 영등포구 여의도동 525',
+    address: '브라이튼 여의도 상가 2층',
+    addressJibun: '',
     tel: '0507-1426-7144',
     tel2: '010-2865-7733',
 
