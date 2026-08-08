@@ -53,7 +53,7 @@ export const CONFIG = {
     time: '11:30',
 
     venue: '한식다이닝 이음',
-    hall: '서울 영등포구 국제금융로 39,',
+    hall: '서울 영등포구 국제금융로 39',
     area: '',
     address: '브라이튼 여의도 상가 2층',
     addressJibun: '',
@@ -155,7 +155,7 @@ export const CONFIG = {
   // ⚠️ 카카오톡 미리보기(제목/설명/썸네일)는 이 값이 아니라 index.html 의 og 태그를 고쳐야 합니다.
   share: {
     title: '장성빈 ♥ 엄지우 결혼합니다',
-    description: '2026년 12월 19일 토요일 오후 1시',
+    description: '2026년 12월 19일 토요일',
   },
 };
 
